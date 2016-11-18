@@ -134,7 +134,7 @@ int getino(int fd, char* pathname)
 		for(i = 0; i < 12; i++)
 		{
 			sum_rec_len = 0;
-			printf("searching i_block[%d]...\n", i);
+			printf("searching i_block[%d]...\n\n", i);
 			if(ip->i_block[i] != 0)
 			{
 				get_block(fd, ip->i_block[i], buf);
@@ -143,13 +143,11 @@ int getino(int fd, char* pathname)
 
 				while(dp != NULL &&  sum_rec_len < i_size && strcmp(names[x], dp->name) != 0)
 				{
-					printf("here1\n");
 
 					print_dir();
 					dp = (DIR *)((char *)dp + dp->rec_len);
 					sum_rec_len += dp->rec_len;
 
-					printf("sum_rec_len = %d\n", sum_rec_len);
 				}
 
 				printf("searched iblock[%d]\n", i);
@@ -165,7 +163,10 @@ int getino(int fd, char* pathname)
 								 + inodes_begin_block;
 						offset = (ino - 1)%inodes_per_block;
 					
+						printf("fd: %d, blk: %d, offset: %d, buf: %s\n", fd, blk, offset, buf);
 						get_block(fd, blk, buf);
+
+	printf("fd: %d, blk: %d, offset: %d, buf: %s\n", fd, blk, offset, buf);
 						ip = (INODE *)buf + offset;
 						print_inode();
 						break;	
@@ -230,7 +231,6 @@ int search(MINODE *mip, char *name, int fd)
 MINODE* iget(int fd, int ino)
 {
 	MINODE* mip = NULL;
-	INODE cpy;
 	int i = 0;
 	
 	for(i = 0; i < NMINODE; i++)
@@ -252,9 +252,17 @@ MINODE* iget(int fd, int ino)
 	}
 
 	mailmans_algorithm(fd, ino);
-	get_block(dev, blk, buf);
+
+	printf("fd: %d, blk: %d, offset: %d, buf: %s\n", fd, blk, offset, buf);
+
+	get_block(fd, blk, buf);
+
+	printf("fd: %d, blk: %d, offset: %d, buf: %s\n", fd, blk, offset, buf);
+
 	ip = (INODE *)buf + offset;
-	
+
+	printf("printing inode...\n");
+	print_inode();
 
 	//initialize minode properties
 	mip->inode = *ip;

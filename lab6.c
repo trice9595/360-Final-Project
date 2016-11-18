@@ -11,8 +11,9 @@ PROC   proc[NPROC] = {0}, *running = NULL;
 MINODE *root = NULL;
 
 int dev = 0;
-char buf[256] = {0};
 int blk = 0, offset = 0;
+int inodes_per_block = 0, inodes_begin_block = 0;
+char buf[256] = {0};
 
 void init()
 {
@@ -68,34 +69,30 @@ void ls(char* pathname)
 	
 	if(pathname)
 	{
-		if(pathname[0] == "/")	
+		if(pathname[0] == "/" || pathname[0] == '\n')	
 		{	
 			dev = root->dev;
-		}
-		else if(pathname[0] == '\n')
-		{
-			printf ("No path entered\n");
-
 			pathname[0] = '.';
 			pathname[1] = '\0';
 		}
-		
 
 		printf("getting ino with entered pathname...\n");
 		ino = getino(dev, pathname);
-		printf("got ino!\n");
+		printf("got ino: %d\n", ino);
 		
 
-		mip = iget(3, ino);
+		mip = iget(dev, ino);
 	}
 
 	ip = &mip->inode;
+	print_inode();
 	i_size = ip->i_size;
 
+	printf("printing directory...\n");
 	int i = 0;
 	for(i = 0; i < 12; i++)
 	{
-		
+		printf("here\n");
 		if(ip->i_block[i] != 0)
 		{
 			get_block(3, ip->i_block[i], buf);
@@ -103,6 +100,7 @@ void ls(char* pathname)
 			i_size -= dp->rec_len;
 
 
+		printf("here1\n");
 			print_dir();
 			while(dp != NULL && i_size > 0)
 			{
@@ -129,7 +127,7 @@ void cd(char* pathname)
 	{
 
 		printf("here2\n");
-		running->cwd = getino(3, pathname);
+		running->cwd = getino(dev, pathname);
 	}
 }
 
@@ -156,6 +154,13 @@ int main(int argc, char* argv[])
 	printf("\n");
 
 	cd(cd_path);
+
+
+  	printf("Enter string for ls pathname: ");
+	fgets(ls_path, sizeof(ls_path), stdin);
+	printf("\n");
+
+	ls(ls_path);
 
 	printf("Enter string for stat pathname: ");
 	fgets(stat_path, sizeof(stat_path), stdin);
