@@ -1,5 +1,5 @@
-#include "util.c"
 
+#include "fs_level1.c"
 
 SUPER *sp = NULL;
 GD    *gp = NULL;
@@ -40,9 +40,6 @@ void mount_root()
 	dev = open("mydisk", O_RDONLY);
 	root = iget(dev, 2);
 
-	printf("dev: %d\n", dev);
-
-
 	//set processes current working directory to root minode
 	proc[0].cwd = iget(root->dev, 2);
 	proc[1].cwd = iget(root->dev, 2);	
@@ -51,82 +48,7 @@ void mount_root()
 	running = &proc[0];
 }
 
-void ls(char* pathname)
-{
 
-	int ino;
-	int i_size = 0;
-	
- 	dev = running->cwd->dev;
-
-	printf("here2\n");
-	MINODE* mip = running->cwd;
-	
-	if(pathname[0] != '/' && pathname[0] != '\n' )
-	{
-		/*if(pathname[0] == "/" || pathname[0] == '\n')	
-		{	
-			printf("ls for cwd\n");
-			pathname[0] = '.';
-			pathname[1] = '\0';
-		}*/
-
-		printf("getting ino with entered pathname...\n");
-		ino = getino(pathname);
-		printf("got ino: %d\n", ino);
-		
-
-		mip = iget(dev, ino);
-		printf("got minode!\n");
-	}
-
-	ip = &mip->inode;
-	print_inode();
-	i_size = ip->i_size;
-
-	printf("printing directory...\n");
-	int i = 0;
-	for(i = 0; i < 12; i++)
-	{
-		if(ip->i_block[i] != 0)
-		{
-			get_block(3, ip->i_block[i], buf);
-			dp = (DIR *)buf;
-			i_size -= dp->rec_len;
-
-			print_dir();
-			while(dp != NULL && i_size > 0)
-			{
-				dp = (DIR *)((char *)dp + dp->rec_len);
-				print_dir();
-				i_size -= dp->rec_len;
-			}
-			
-			if(i_size <= 0)
-				break;
-		}
-	}
-}
-
-void cd(char* pathname)
-{
-	int ino;
-	printf("here\n");
-	if(pathname == NULL || strcmp(pathname, "/") == 0)
-	{
-		printf("here1\n");
-		running->cwd = root;
-	}
-	else
-	{
-
-		printf("here2\n");
-		ino = getino(pathname);
-
-		running->cwd = iget(dev, ino);
-		printf("running->cwd.ino: %d\n", running->cwd->ino);
-	}
-}
 
 int main(int argc, char* argv[])
 {
