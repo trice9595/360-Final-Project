@@ -47,7 +47,6 @@ int read_super_block(int fd)
 		printf("NOT an EXT2 FS\n");
     	exit(1);
   	}
-
 	return (1024 << sp->s_log_block_size)/sizeof(INODE);
 }
 
@@ -88,6 +87,8 @@ int getino(int fd, char* pathname)
 {
 	
 	int ino, blk, offset;
+	int sum_rec_len = 0;
+	int i_size = 0;
 	int inodes_begin_block, inodes_per_block;
 	int x = 0;
 
@@ -105,7 +106,7 @@ int getino(int fd, char* pathname)
 	get_block(fd, inodes_begin_block, buf);
 	ip = (INODE *)buf + 1;
 	print_inode();
-
+	i_size = ip->i_size;
 	printf("tokenizing pathname..\n");
 	char** names = tokenize(pathname);
 
@@ -116,35 +117,53 @@ int getino(int fd, char* pathname)
 		int i = 0;
 		for(i = 0; i < 12; i++)
 		{
-			printf("searching i_block[%d]\n", i);
+			sum_rec_len = 0;
+			printf("searching i_block[%d]...\n", i);
 			if(ip->i_block[i] != 0)
 			{
 				get_block(fd, ip->i_block[i], buf);
 				dp = (DIR *)buf;
+				sum_rec_len += dp->rec_len;
 
-				while(strcmp(names[i], dp->name) != 0 
-						&& dp->file_type != 8 
-						&& dp->file_type != 0)
+				while(dp != NULL &&  sum_rec_len < i_size && strcmp(names[x], dp->name) != 0)
 				{
-					dp = (DIR *)((char *)dp + dp->rec_len);	
+					printf("here1\n");
+
+					print_dir();
+					dp = (DIR *)((char *)dp + dp->rec_len);
+					sum_rec_len += dp->rec_len;
+
+					printf("sum_rec_len = %d\n", sum_rec_len);
 				}
 
-				if(dp->name != NULL && 
-				dp->file_type != EXT2_FT_REG_FILE)
+				printf("searched iblock[%d]\n", i);
+
+				if(strcmp(names[x], dp->name) ==  0)
 				{
-					ino = dp->inode;
-					blk = (ino - 1)/inodes_per_block + inodes_begin_block;
-					offset = (ino - 1)%inodes_per_block;
+					if(dp->name != NULL && 
+					dp->file_type != EXT2_FT_REG_FILE)
+					{
+						printf("DIRECTORY %s FOUND\n", dp->name);
+						ino = dp->inode;
+						blk = (ino - 1)/inodes_per_block
+								 + inodes_begin_block;
+						offset = (ino - 1)%inodes_per_block;
 					
-					get_block(fd, blk, buf);
-					ip = (INODE *)buf + offset;
-					break;	
-				}
-				else if(dp->name != NULL && 
-				dp->file_type == EXT2_FT_REG_FILE)
+						get_block(fd, blk, buf);
+						ip = (INODE *)buf + offset;
+						print_inode();
+						break;	
+					}
+					else if(dp->name != NULL && 
+					dp->file_type == EXT2_FT_REG_FILE)
+					{
+						printf("FILE %s FOUND\n", dp->name);
+						ino = dp->inode;
+						break;
+					}
+				}else
 				{
-					ino = dp->inode;
-					break;
+					printf("ERROR: INVALID PATH\n");
 				}
 						
 			}	
