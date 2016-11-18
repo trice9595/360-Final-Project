@@ -146,13 +146,6 @@ int main(int argc, char* argv[])
 
 	cd(cd_path);
 
-
-  	printf("Enter string for ls pathname: ");
-	fgets(ls_path, sizeof(ls_path), stdin);
-	printf("\n");
-
-	ls(ls_path);
-
 	printf("Enter string for stat pathname: ");
 	fgets(stat_path, sizeof(stat_path), stdin);
 	printf("\n");
