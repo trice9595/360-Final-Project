@@ -24,12 +24,16 @@ int main(int argc, char *argv[], char *env[])
 	{
 		printf ("Please type a command: ");
 		scanf ("%s", input);
+		printf ("\n");
 
 		while(i < 256)
 		{
 			splitInput[i] = NULL;
+
+			i++;
 		}
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 	while (splitInput[i] = strtok(NULL, " "))
@@ -46,6 +50,10 @@ int main(int argc, char *argv[], char *env[])
 	{
 		ls(splitInput[1]);
 =======
+=======
+		i = 1;
+
+>>>>>>> ffaff06f1367533520acf4b789d04794173aba7b
 		splitInput[0] = strtok(input, " ");
 
 		while (splitInput[i] = strtok(NULL, " "))
@@ -57,15 +65,43 @@ int main(int argc, char *argv[], char *env[])
 		{
 			ls(splitInput[1]);
 		}
-		else if (!strcmp(splitInput[0], "cd"))
+		else if (splitinput[1] && !strcmp(splitInput[0], "cd"))
 		{
-			cd(splitInput[1];
+			cd(splitInput[1]);
+		}
+		else if (!strcmp(splitInput[0], "pwd"))
+		{
+			pwd();
+		}
+		else if (splitInput[1] && !strcmp(splitInput[0], "mkdir"))
+		{
+			mkdir(splitInput[1]);
+		}
+		else if (splitInput[1] && !strcmp(splitInput[0], "rmdir"))
+		{
+			rmdir(splitInput[1]);
+		}
+		else if (splitInput1 && !strcmp(splitInput[0], "creat"))
+		{
+			creat(splitInput[1]);
+		}
+		else if (splitInput[1] && splitInput [2] && !strcmp(splitInput[0], "symlink"))
+		{
+			symlink(splitInput[1], splitInput[2]);
+		}
+		else if (!strcmp(splitInput[0], "readlink"))
+		{
+			readlink();
 		}
 		else
 		{
-			break;
+			printf ("invalid command\n");
 		}
+<<<<<<< HEAD
 >>>>>>> 56505d3dbb59ee81846b883ef8f6e00f8a694a37
+=======
+		
+>>>>>>> ffaff06f1367533520acf4b789d04794173aba7b
 	}
 }
 
