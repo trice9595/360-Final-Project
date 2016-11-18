@@ -38,5 +38,4 @@ int ubuf2[256];
 
 #define NMINODE      100
 #define NFD           16
-#define GIT_TEST       1
 #define NPROC          4
