@@ -217,3 +217,77 @@ void creat_fs(char* pathname)
 		3. Do not increment parent inodes link count
 	*/
 }
+
+void link(char* oldfile, char* newfile)
+{
+
+	/*1. verrify oldfile and is not DIR
+	int oino = getino(&odev, oldfile);
+	MINODE* omip = iget(odev, oldfile)
+
+	2. new file must not exist yet
+	int nino = getino(&ndev, newfile); must retu
+	if(nino != 0)
+		return;
+
+	3. creat entry in new_parent DIR with sae ino
+	pmip -> minode of dirname(newfile)
+	enter_name(pmip, omip->ino, basename(newfile))
+
+	4. omip->inode.i_links_count++;
+	omip->dirty = 1;
+	iput(omip);
+	iput(omip);
+	*/
+}
+
+void unlink(char* filename)
+{
+	/*
+	1. get filename's minode:
+	int ino = getino(&dev, filename)
+	MINODE* mip = iget(dev, ino)
+
+	2. remove basename from parent DIR
+	rm_child(pmip, mip->ino, basename)
+	pmip->dirty = 1;
+	iput(pmip);
+
+	3.decrement inode's link count
+	mip->inode.i_links_count--;
+	if(mip->inode.links_count > 0)
+		mip->dirty = 1; iput(mip);
+
+	if(!SLINK file)  or filetype 7 //assume:SLINK file has not data block
+		truncate(mip);
+	deallocate(inode);
+	iput(mip);
+
+	*/
+}
+
+void symlink()
+{
+	/*
+	1. check: old_file must exist and new_file not yet exist
+	2. create newfile; change newfile to slink type  or filetype 7
+	3. assume length of oldfile name <= 60 chars
+		store oldfile name in newfiles inode.i_block[] area
+		mark new files minode dirty
+		iput(newfile's minode)
+	4. mark newfile's parent minode dirty
+		put(newfile's parent minode)
+	*/
+}
+
+
+void readlink()
+{
+	/*
+	1. get file's inode into memory, verify it's a slink file or filetype 7
+	2. copy target filename in inode.i_block into a buffer
+	3. return strlen((char *)mip->inode.i_block)
+	*/
+}
+ 
+
