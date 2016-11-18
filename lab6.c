@@ -13,7 +13,7 @@ MINODE *root = NULL;
 int dev = 0;
 int blk = 0, offset = 0;
 int inodes_per_block = 0, inodes_begin_block = 0;
-char buf[256] = {0};
+char buf[256] = { 0 };
 
 void init()
 {
@@ -37,7 +37,7 @@ void init()
 
 void mount_root()
 {		
-	dev = open("diskimage", O_RDONLY);
+	dev = open("mydisk", O_RDONLY);
 	root = iget(dev, 2);
 
 	printf("dev: %d\n", dev);

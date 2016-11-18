@@ -10,7 +10,10 @@ int get_block(int fd, int blk, char buf[ ])
 {
   lseek(fd, (long)blk*BLKSIZE, 0);
 
+	printf("fd: %d, blk: %d, offset: %d, buf: |%s|\n", fd, blk, offset, buf);
   read(fd, buf, BLKSIZE);
+
+	printf("fd: %d, blk: %d, offset: %d, buf: |%s|\n", fd, blk, offset, buf);
 }
 
 int put_block(int fd, int blk, char buf[ ])
@@ -76,6 +79,7 @@ void mailmans_algorithm(int fd, int ino)
 
 void print_inode()
 {
+	printf("printing inode...\n");
 	printf("ip->i_size: %d\n", ip->i_size);
 	printf("ip->i_blocks: %d\n", ip->i_blocks);
 	printf("ip->i_ctime: %d\n", ip->i_ctime);
@@ -166,8 +170,12 @@ int getino(int fd, char* pathname)
 						printf("fd: %d, blk: %d, offset: %d, buf: %s\n", fd, blk, offset, buf);
 						get_block(fd, blk, buf);
 
-	printf("fd: %d, blk: %d, offset: %d, buf: %s\n", fd, blk, offset, buf);
+	printf("fd: %d, blk: %d, offset: %d, buf: |%s|\n", fd, blk, offset, buf);
+						printf("ip: %d\n", ip);
+						print_inode();
 						ip = (INODE *)buf + offset;
+						
+						printf("ip: %d\n", ip);
 						print_inode();
 						break;	
 					}
