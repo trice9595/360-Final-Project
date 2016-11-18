@@ -13,7 +13,7 @@ MINODE *root = NULL;
 int dev = 0;
 int blk = 0, offset = 0;
 int inodes_begin_block = 0, inodes_per_block = 0;
-char buf[1024] = { 0 };
+char buf[BLKSIZE] = { 0 };
 
 void init()
 {
@@ -65,7 +65,6 @@ int main(int argc, char* argv[])
   	printf("Enter string for ls pathname: ");
 	fgets(ls_path, sizeof(ls_path), stdin);
 	printf("\n");
-
 	ls(ls_path);
 
 	printf("Enter string for cd pathname: ");

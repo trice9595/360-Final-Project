@@ -57,6 +57,14 @@ int read_group_desc_block(int fd)
 	return gp->bg_inode_table;
 }
 
+
+void calculate_inode_block_info(int fd)
+{
+	inodes_begin_block = read_group_desc_block(fd);
+	inodes_per_block = read_super_block(fd);
+}
+
+
 //sets global offset and blk variables
 void mailmans_algorithm(int fd, int ino)
 {	
@@ -68,12 +76,6 @@ void mailmans_algorithm(int fd, int ino)
 	inodes_begin_block;
 	offset = (ino - 1)%inodes_per_block;
 
-}
-
-void calculate_inode_block_info(int fd)
-{
-		inodes_begin_block = read_group_desc_block(fd);
-		inodes_per_block = read_super_block(fd);
 }
 
 void print_inode()
@@ -91,103 +93,25 @@ void print_dir()
 }
 
 
-int getino(char* pathname)
-{
-	
-	int ino;
-	int sum_rec_len = 0;
-	int i_size = 0;
-	int x = 0;
-
-
-	ip = running->cwd;
-	print_inode();
-	i_size = ip->i_size;
-	printf("tokenizing pathname..\n");
-	char** names = tokenize(pathname);
-
-	while(names[x] != NULL && strcmp(names[x], "") != 0)
-	{
-
-		printf("searching for names[%d] = %s\n", x, names[x]);
-		int i = 0;
-		for(i = 0; i < 12; i++)
-		{
-			sum_rec_len = 0;
-			printf("searching i_block[%d]...\n\n", i);
-			print_inode();
-			if(ip->i_block[i] != 0)
-			{
-				get_block(dev, ip->i_block[i], buf);
-				dp = (DIR *)buf;
-				sum_rec_len += dp->rec_len;
-				while(sum_rec_len < i_size && 
-				strcmp(names[x], dp->name) != 0)
-				{
-					print_dir();
-					dp = (DIR *)((char *)dp + dp->rec_len);
-					sum_rec_len += dp->rec_len;
-				}
-
-				printf("searched iblock[%d]\n", i);
-
-				if(strcmp(names[x], dp->name) ==  0)
-				{
-					if(dp->name != NULL && 
-					dp->file_type != EXT2_FT_REG_FILE)
-					{
-						printf("DIRECTORY %s FOUND\n", dp->name);
-						ino = dp->inode;
-						mailmans_algorithm(dev, ino);
-		
-						get_block(dev, blk, buf);
-
-						ip = (INODE *)buf + offset;
-						break;	
-					}
-					else if(dp->name != NULL && 
-					dp->file_type == EXT2_FT_REG_FILE)
-					{
-						printf("FILE %s FOUND\n", dp->name);
-						ino = dp->inode;
-						break;
-					}
-				}else
-				{
-					printf("ERROR: INVALID PATH\n");
-				}
-						
-			}	
-
-		}
-		x++;
-	}
-
-	return ino;
-}
-
-
-int search(MINODE *mip, char *name, int fd)
+int search_inode(INODE* inode, char *name)
 {
    int i; 
-   char *cp, sbuf[BLKSIZE];
-   DIR *dp;
-   INODE *ip;
+   char *cp;
 
-   ip = &(mip->inode);
+	ip = inode;	
    for (i=0; i<12; i++){  // ASSUME DIRs only has 12 direct blocks
        if (ip->i_block[i] == 0)
           return 0;
 
-       get_block(fd, ip->i_block[i], sbuf);
-       dp = (DIR *)sbuf;
-       cp = sbuf;
-       while (cp < sbuf + BLKSIZE){
+       get_block(dev, ip->i_block[i], buf);
+       dp = (DIR *)buf;
+       cp = buf;
+       while (cp < buf + BLKSIZE){
           // print dp->inode, dp->rec_len, dp->name_len, dp->name);
-	      printf("dp->inode: %d\n", dp->inode);
+	      printf("\ndp->inode: %d\n", dp->inode);
 	      printf("dp->rec_len: %d\n", dp->rec_len);
 	      printf("dp->name_len: %d\n", dp->name_len);
-	      printf("dp->name: %s\n", dp->name);
+	      printf("dp->name: %s\n\n", dp->name);
 
           // WRITE YOUR CODE TO search for name: return its ino if found
 		  if(strcmp(dp->name, name) == 0)
@@ -201,6 +125,44 @@ int search(MINODE *mip, char *name, int fd)
    return 0;
 
 }
+
+
+int getino(char* pathname)
+{
+	
+	int ino;
+	int sum_rec_len = 0;
+	int i_size = 0;
+	int x = 0;
+
+
+	ip = &running->cwd->inode;
+	print_inode();
+	i_size = ip->i_size;
+	printf("tokenizing pathname..\n");
+	char** names = tokenize(pathname);
+
+	while(names[x] != NULL && strcmp(names[x], "") != 0)
+	{
+
+		printf("searching for names[%d] = %s\n", x, names[x]);
+		int i = 0;
+		ino = search_inode(ip, names[x]);
+
+		x++;
+		if(names[x] != NULL && strcmp(names[x], "") != 0)
+		{	
+			mailmans_algorithm(dev, ino);
+		
+			get_block(dev, blk, buf);
+
+			ip = (INODE *)buf + offset;
+		}
+	}
+
+	return ino;
+}
+
 
 MINODE* iget(int fd, int ino)
 {
