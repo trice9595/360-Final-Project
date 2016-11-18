@@ -7,7 +7,7 @@
 int main(int argc, char *argv[], char *env[])
 {
 	int err = 0, i = 0;
-	string input;
+	char* input;
 	char* splitInput[256];
 
 	err = mount_root();
@@ -24,12 +24,12 @@ int main(int argc, char *argv[], char *env[])
 
 	splitInput[0] = strtok(input, " ");
 
-	while (splitInput[i] = strtok(NULL, " ")
+	while (splitInput[i] = strtok(NULL, " "))
 	{
 		i++;
 	}
 
-	if (!strcmp(splitInput[0], "ls")
+	if (!strcmp(splitInput[0], "ls"))
 	{
 		ls(splitInput[1]);
 	}
@@ -89,7 +89,7 @@ int ls(char* pathname)
 		printf("got ino!\n", root->dev);
 		
 
-		mip = iget(3, ino);
+		mip = iget(dev, ino);
 	}
 	else
 	{
