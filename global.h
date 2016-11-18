@@ -39,4 +39,4 @@ extern MINODE *root;
 extern int dev;
 extern int blk, offset;
 extern int inodes_begin_block, inodes_per_block;
-extern char buf[1024];
+extern char buf[BLKSIZE];

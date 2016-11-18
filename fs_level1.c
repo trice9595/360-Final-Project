@@ -70,7 +70,7 @@ void cd(char* pathname)
 	}
 }
 
-void mkdir(char* pathname)
+void mkdir_fs(char* pathname)
 {
 	int ino;
 	if(pathname == NULL || strcmp(pathname, "/") == 0)
@@ -85,5 +85,37 @@ void mkdir(char* pathname)
 	MINODE* mip = iget(dev, ino);
 
 	//traverse mip inode until space is found to mkdir
+
+}
+
+void rmdir_fs()
+{
+
+
+
+}
+
+void creat_fs(char* pathname)
+{
+	char filename[64];
+	char** names = tokenize(pathname);
+	int i = 0, ino;
+
+	while(names[i + 1] != NULL)
+	{
+		i++;
+	}
+
+	if(names[i] == NULL)
+	{
+		printf("Invalid creat argument\n");
+		return;
+	}
+
+	strcpy(filename, names[i]);	
+	printf("filename: %s\n", filename);
+	names[i] = NULL;
+
+	ino = getino(*names);
 
 }
