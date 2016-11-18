@@ -9,11 +9,7 @@ ssize_t read(int fd, void* buf, size_t nbyte);
 int get_block(int fd, int blk, char buf[ ])
 {
   lseek(fd, (long)blk*BLKSIZE, 0);
-
-	printf("fd: %d, blk: %d, offset: %d, buf: |%s|\n", fd, blk, offset, buf);
   read(fd, buf, BLKSIZE);
-
-	printf("fd: %d, blk: %d, offset: %d, buf: |%s|\n", fd, blk, offset, buf);
 }
 
 int put_block(int fd, int blk, char buf[ ])
@@ -63,12 +59,9 @@ int read_group_desc_block(int fd)
 
 //sets global offset and blk variables
 void mailmans_algorithm(int fd, int ino)
-{
-	//read super block for inodes per block
-	int inodes_per_block = read_super_block(fd);
-
-	//read group desc block for inodes begin block
-	int inodes_begin_block = read_group_desc_block(fd);
+{	
+	if(inodes_per_block == 0 || inodes_begin_block == 0)
+		calculate_inode_block_info(fd);		
 
 	//find block and offset within block
 	blk = (ino - 1)/inodes_per_block + 		      
@@ -77,54 +70,37 @@ void mailmans_algorithm(int fd, int ino)
 
 }
 
+void calculate_inode_block_info(int fd)
+{
+		inodes_begin_block = read_group_desc_block(fd);
+		inodes_per_block = read_super_block(fd);
+}
+
 void print_inode()
 {
 	printf("printing inode...\n");
 	printf("ip->i_size: %d\n", ip->i_size);
-	printf("ip->i_blocks: %d\n", ip->i_blocks);
-	printf("ip->i_ctime: %d\n", ip->i_ctime);
-	printf("ip->i_atime: %d\n", ip->i_atime);
+	printf("ip->i_blocks: %d\n\n", ip->i_blocks);
 }
 
 void print_dir()
 {
 	printf("dp->name: %s\n", dp->name);
 	printf("dp->file_type: %d\n", dp->file_type);
-	printf("dp->inode: %d\n", dp->inode);
-	printf("dp->rec_len: %d\n\n", dp->rec_len);
+	printf("dp->inode: %d\n\n", dp->inode);
 }
 
-void print_super_block()
-{
-	printf("sp->s_inodes_count: %d\n", sp->s_inodes_count);
-	printf("sp->s_blocks_count: %d\n", sp->s_blocks_count);
-	printf("sp->s_log_block_size: %d\n", sp->s_log_block_size);
-	printf("sp->s_first_data_block: %d\n", sp->s_first_data_block);
 
-}
-
-int getino(int fd, char* pathname)
+int getino(char* pathname)
 {
 	
 	int ino, blk, offset;
 	int sum_rec_len = 0;
 	int i_size = 0;
-	int inodes_begin_block, inodes_per_block;
 	int x = 0;
 
-	printf("reading super block...\n");
-	//read super block
-	inodes_per_block = read_super_block(fd);
-	
 
-	printf("reading group desc block...\n");
-	// read group descriptor block
-	inodes_begin_block = read_group_desc_block(fd);
-
-	printf("reading inode...\n");
-
-	get_block(fd, inodes_begin_block, buf);
-	ip = (INODE *)buf + 1;
+	ip = running->cwd;
 	print_inode();
 	i_size = ip->i_size;
 	printf("tokenizing pathname..\n");
@@ -141,17 +117,16 @@ int getino(int fd, char* pathname)
 			printf("searching i_block[%d]...\n\n", i);
 			if(ip->i_block[i] != 0)
 			{
-				get_block(fd, ip->i_block[i], buf);
+				get_block(dev, ip->i_block[i], buf);
 				dp = (DIR *)buf;
 				sum_rec_len += dp->rec_len;
 
-				while(dp != NULL &&  sum_rec_len < i_size && strcmp(names[x], dp->name) != 0)
+				while(sum_rec_len < i_size && 
+				strcmp(names[x], dp->name) != 0)
 				{
-
 					print_dir();
 					dp = (DIR *)((char *)dp + dp->rec_len);
 					sum_rec_len += dp->rec_len;
-
 				}
 
 				printf("searched iblock[%d]\n", i);
@@ -163,15 +138,9 @@ int getino(int fd, char* pathname)
 					{
 						printf("DIRECTORY %s FOUND\n", dp->name);
 						ino = dp->inode;
-						blk = (ino - 1)/inodes_per_block
-								 + inodes_begin_block;
-						offset = (ino - 1)%inodes_per_block;
-					
-						printf("fd: %d, blk: %d, offset: %d, buf: %s\n", fd, blk, offset, buf);
-						get_block(fd, blk, buf);
-
-	printf("fd: %d, blk: %d, offset: %d, buf: |%s|\n", fd, blk, offset, buf);
-						printf("ip: %d\n", ip);
+						mailmans_algorithm(dev, ino);
+						get_block(dev, blk, buf);
+;
 						print_inode();
 						ip = (INODE *)buf + offset;
 						
@@ -240,7 +209,8 @@ MINODE* iget(int fd, int ino)
 {
 	MINODE* mip = NULL;
 	int i = 0;
-	
+	printf("searching for minode with inode #%d\n", ino);
+
 	for(i = 0; i < NMINODE; i++)
 	{
 		//minode exists already
@@ -248,30 +218,23 @@ MINODE* iget(int fd, int ino)
 			&& minode[i].dev == fd)
 		{
 			minode[i].refCount++;
-			printf("minode %d found\n", i);
+			printf("**minode %d found**\n\n", i);
 			return &minode[i];				
 		}
 		//empty minode found and mip is still null
 		else if(minode[i].refCount == 0 && mip == NULL)
 		{
-			printf("minode %d created\n", i);
+			printf("**minode %d created**\n\n", i);
 			mip = &minode[i];
 		}
 	}
 
 	mailmans_algorithm(fd, ino);
 
-	printf("fd: %d, blk: %d, offset: %d, buf: %s\n", fd, blk, offset, buf);
-
 	get_block(fd, blk, buf);
-
-	printf("fd: %d, blk: %d, offset: %d, buf: %s\n", fd, blk, offset, buf);
-
 	ip = (INODE *)buf + offset;
-
-	printf("printing inode...\n");
 	print_inode();
-
+	
 	//initialize minode properties
 	mip->inode = *ip;
 	mip->refCount = 1;
