@@ -92,6 +92,29 @@ void print_dir()
 	printf("dp->inode: %d\n\n", dp->inode);
 }
 
+int get_num_entries()(INODE* inode)
+{
+   int i, num_entries; 
+   char *cp;
+
+	ip = inode;	
+   for (i=0; i<12; i++){  // ASSUME DIRs only has 12 direct blocks
+       if (ip->i_block[i] == 0)
+          return 0;
+
+       get_block(dev, ip->i_block[i], buf);
+       dp = (DIR *)buf;
+       cp = buf;
+		num_entries = 1;
+       while (cp < buf + BLKSIZE){
+          cp += dp->rec_len;
+          dp = (DIR *)cp;
+			num_entries++;
+       }
+   }
+   return num_entries;
+
+}
 
 int search_inode(INODE* inode, char *name)
 {
@@ -127,7 +150,7 @@ int search_inode(INODE* inode, char *name)
 }
 
 
-int getino(char* pathname)
+int getino(int* fd, char* pathname)
 {
 	
 	int ino;
@@ -152,9 +175,9 @@ int getino(char* pathname)
 		x++;
 		if(names[x] != NULL && strcmp(names[x], "") != 0)
 		{	
-			mailmans_algorithm(dev, ino);
+			mailmans_algorithm(fd, ino);
 		
-			get_block(dev, blk, buf);
+			get_block(fd, blk, buf);
 
 			ip = (INODE *)buf + offset;
 		}
