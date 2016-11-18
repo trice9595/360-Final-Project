@@ -94,7 +94,7 @@ void print_dir()
 int getino(char* pathname)
 {
 	
-	int ino, blk, offset;
+	int ino;
 	int sum_rec_len = 0;
 	int i_size = 0;
 	int x = 0;
@@ -115,12 +115,12 @@ int getino(char* pathname)
 		{
 			sum_rec_len = 0;
 			printf("searching i_block[%d]...\n\n", i);
+			print_inode();
 			if(ip->i_block[i] != 0)
 			{
 				get_block(dev, ip->i_block[i], buf);
 				dp = (DIR *)buf;
 				sum_rec_len += dp->rec_len;
-
 				while(sum_rec_len < i_size && 
 				strcmp(names[x], dp->name) != 0)
 				{
@@ -139,13 +139,10 @@ int getino(char* pathname)
 						printf("DIRECTORY %s FOUND\n", dp->name);
 						ino = dp->inode;
 						mailmans_algorithm(dev, ino);
+		
 						get_block(dev, blk, buf);
-;
-						print_inode();
+
 						ip = (INODE *)buf + offset;
-						
-						printf("ip: %d\n", ip);
-						print_inode();
 						break;	
 					}
 					else if(dp->name != NULL && 
@@ -233,7 +230,6 @@ MINODE* iget(int fd, int ino)
 
 	get_block(fd, blk, buf);
 	ip = (INODE *)buf + offset;
-	print_inode();
 	
 	//initialize minode properties
 	mip->inode = *ip;
