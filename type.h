@@ -1,9 +1,9 @@
 /*************** type.h file ******************/
-#include "global.c"
 
+#include <ext2fs/ext2_fs.h>
 
 typedef struct minode{
-  INODE inode;
+  struct ext2_inode inode;
   int dev, ino;
   int refCount;
   int dirty;
@@ -25,7 +25,7 @@ typedef struct proc{
   int          status;
   int          uid, gid;
   MINODE      *cwd;
-  OFT         *fd[NFD];
+  OFT         *fd[16]; //NFD
 }PROC;
 
 typedef struct mount{

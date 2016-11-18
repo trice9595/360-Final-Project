@@ -1,18 +1,30 @@
 #include "util.c"
 
 
+SUPER *sp = NULL;
+GD    *gp = NULL;
+INODE *ip = NULL;
+DIR   *dp = NULL;
 
+MINODE minode[NMINODE] = {0};
+PROC   proc[NPROC] = {0}, *running = NULL;
+MINODE *root = NULL;
+
+int dev = 0;
+char buf[256] = {0};
 
 void init()
 {
+	
+	
 	int i = 0;
+
 
 	proc[0].uid = 0;
 	proc[1].uid = 1;
 	proc[0].cwd = 0;
 	proc[1].cwd = 0;
 
-	root = 0;
 
 	for(i = 0; i < NMINODE; i++)
 	{
@@ -26,6 +38,7 @@ void mount_root()
 	dev = open("diskimage", O_RDONLY);
 	root = iget(dev, 2);
 
+	printf("dev: %d\n", dev);
 
 	printf("root\n");
 	printf("dev: %d\n", root->dev);
@@ -34,9 +47,11 @@ void mount_root()
 	printf("dirty: %d\n", root->dirty);
 	printf("mounted: %d\n", root->mounted);
 
+	//set processes current working directory to root minode
 	proc[0].cwd = iget(root->dev, 2);
 	proc[1].cwd = iget(root->dev, 2);	
 
+	//set running process to first process
 	running = &proc[0];
 }
 
@@ -49,15 +64,14 @@ void ls(char* pathname)
 
 	MINODE* mip = running->cwd;
 	
-	printf("running->cwd->dev: %d\n", running->cwd->dev);
 	if(pathname)
 	{
 		if(pathname[0] == "/")		
 			dev = root->dev;
 
-		printf("dev: %d\n", dev);
+		printf("getting ino with entered pathname...\n");
 		ino = getino(dev, pathname);
-		printf("root->dev: %d\n", root->dev);
+		printf("got ino!\n", root->dev);
 		
 
 		/*printf("dev: %d\n", dev);

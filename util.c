@@ -1,25 +1,16 @@
 #include "type.h"
-#include "global.c"
-
-
-MINODE minode[NMINODE];
-PROC   proc[NPROC], *running;
-MINODE *root;
+#include "global.h"
 
 
 off_t lseek(int fd, off_t offset, int whence);
 ssize_t read(int fd, void* buf, size_t nbyte);
-int write(int fd, void* buf, size_t nbyte);
+//int write(int fd, void* buf, size_t nbyte);
 
 int get_block(int fd, int blk, char buf[ ])
 {
   lseek(fd, (long)blk*BLKSIZE, 0);
 
-	if(root != NULL)
-		printf("2root->dev: %d\n", root->dev);
   read(fd, buf, BLKSIZE);
-	if(root != NULL)
-		printf("3root->dev: %d\n", root->dev);
 }
 
 int put_block(int fd, int blk, char buf[ ])
@@ -48,13 +39,9 @@ char** tokenize(char *pathname)
 int read_super_block(int fd)
 {
 
-	if(root != NULL)
-		printf("1root->dev: %d\n", root->dev);
 	get_block(fd, 1, buf);
 	sp = (SUPER *)buf;
 	
-	if(root != NULL)
-		printf("2root->dev: %d\n", root->dev);
 	if (sp->s_magic != 0xEF53)
 	{
 		printf("NOT an EXT2 FS\n");
@@ -78,7 +65,6 @@ void print_inode()
 	printf("ip->i_blocks: %d\n", ip->i_blocks);
 	printf("ip->i_ctime: %d\n", ip->i_ctime);
 	printf("ip->i_atime: %d\n", ip->i_atime);
-
 }
 
 void print_dir()
@@ -105,29 +91,32 @@ int getino(int fd, char* pathname)
 	int inodes_begin_block, inodes_per_block;
 	int x = 0;
 
+	printf("reading super block...\n");
+	//read super block
 	inodes_per_block = read_super_block(fd);
 	
-	printf("here2\n");
+
+	printf("reading group desc block...\n");
 	// read group descriptor block
 	inodes_begin_block = read_group_desc_block(fd);
 
+	printf("reading inode...\n", root->dev);
 
-	printf("root->dev: %d\n", root->dev);
 	get_block(fd, inodes_begin_block, buf);
 	ip = (INODE *)buf + 1;
 	print_inode();
-	printf("here3\n");
+
+	printf("tokenizing pathname..\n");
 	char** names = tokenize(pathname);
 
-	printf("root->dev: %d\n", root->dev);
 	while(names[x] != NULL && strcmp(names[x], "") != 0)
 	{
 
-		printf("here\n");
+		printf("searching for names[%d] = %s\n", x, names[x]);
 		int i = 0;
 		for(i = 0; i < 12; i++)
 		{
-			printf("here\n");
+			printf("searching i_block[%d]\n", i);
 			if(ip->i_block[i] != 0)
 			{
 				get_block(fd, ip->i_block[i], buf);
@@ -212,6 +201,7 @@ MINODE* iget(int fd, int ino)
 	
 	for(i = 0; i < NMINODE; i++)
 	{
+		//minode exists already
 		if(minode[i].ino == ino 
 			&& minode[i].dev == fd)
 		{
@@ -219,6 +209,7 @@ MINODE* iget(int fd, int ino)
 			printf("minode %d found\n", i);
 			return &minode[i];				
 		}
+		//empty minode found and mip is still null
 		else if(minode[i].refCount == 0 && mip == NULL)
 		{
 			printf("minode %d created\n", i);
@@ -226,7 +217,10 @@ MINODE* iget(int fd, int ino)
 		}
 	}
 
+	//read super block for inodes per block
 	inodes_per_block = read_super_block(fd);
+
+	//read group desc block for inodes begin block
 	inodes_begin_block = read_group_desc_block(fd);
 
 	//find block and offset within block
@@ -238,8 +232,7 @@ MINODE* iget(int fd, int ino)
 	get_block(fd, blk, buf);
 	ip = (INODE *)buf + offset;
 
-	//initialize properties
-
+	//initialize minode properties
 	mip->inode = *ip;
 	mip->refCount = 1;
 	mip->dev = fd;
