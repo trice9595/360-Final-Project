@@ -33,15 +33,10 @@ int main(int argc, char *argv[], char *env[])
 			i++;
 		}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 	while (splitInput[i] = strtok(NULL, " "))
-=======
 	i = 0;
 
 	while (splitInput[i] = strtok(NULL, " ")
->>>>>>> eb1b70f6e0e1510328920099a2e3e72f7fb88ca4
 	{
 		i++;
 	}
@@ -49,11 +44,8 @@ int main(int argc, char *argv[], char *env[])
 	if (!strcmp(splitInput[0], "ls"))
 	{
 		ls(splitInput[1]);
-=======
-=======
 		i = 1;
 
->>>>>>> ffaff06f1367533520acf4b789d04794173aba7b
 		splitInput[0] = strtok(input, " ");
 
 		while (splitInput[i] = strtok(NULL, " "))
@@ -97,11 +89,6 @@ int main(int argc, char *argv[], char *env[])
 		{
 			printf ("invalid command\n");
 		}
-<<<<<<< HEAD
->>>>>>> 56505d3dbb59ee81846b883ef8f6e00f8a694a37
-=======
-		
->>>>>>> ffaff06f1367533520acf4b789d04794173aba7b
 	}
 }
 
@@ -129,8 +116,6 @@ int mount_root()
 
 	return 1;
 }
-<<<<<<< HEAD
-
 int ls(char* pathname)
 {
 	int ino;
@@ -204,5 +189,3 @@ int ls(char* pathname)
 		}
 	}
 }
-=======
->>>>>>> 56505d3dbb59ee81846b883ef8f6e00f8a694a37
