@@ -59,6 +59,7 @@ void ls(char* pathname)
 {
 
 	int ino;
+	int i_size = 0;
 	
  	dev = running->cwd->dev;
 
@@ -74,13 +75,11 @@ void ls(char* pathname)
 		printf("got ino!\n", root->dev);
 		
 
-		/*printf("dev: %d\n", dev);
-		printf("root->dev: %d\n", root->dev);
-*/
 		mip = iget(3, ino);
 	}
 
 	ip = &mip->inode;
+	i_size = ip->i_size;
 
 	int i = 0;
 	for(i = 0; i < 12; i++)
@@ -90,13 +89,18 @@ void ls(char* pathname)
 		{
 			get_block(3, ip->i_block[i], buf);
 			dp = (DIR *)buf;
-			while(dp->file_type != 8 && dp->file_type != 0)
+			i_size -= dp->rec_len;
+
+
+			print_dir();
+			while(dp != NULL && i_size > 0)
 			{
-				print_dir();
 				dp = (DIR *)((char *)dp + dp->rec_len);
+				print_dir();
+				i_size -= dp->rec_len;
 			}
 			
-			if(dp->file_type == 0)
+			if(i_size <= 0)
 				break;
 		}
 	}
@@ -105,7 +109,7 @@ void ls(char* pathname)
 void cd(char* pathname)
 {
 	printf("here\n");
-	if(pathname == NULL || strcmp(pathname, "/"))
+	if(pathname == NULL || strcmp(pathname, "/") == 0)
 	{
 		printf("here1\n");
 		running->cwd = root;
@@ -141,6 +145,13 @@ int main(int argc, char* argv[])
 	printf("\n");
 
 	cd(cd_path);
+
+
+  	printf("Enter string for ls pathname: ");
+	fgets(ls_path, sizeof(ls_path), stdin);
+	printf("\n");
+
+	ls(ls_path);
 
 	printf("Enter string for stat pathname: ");
 	fgets(stat_path, sizeof(stat_path), stdin);
