@@ -12,6 +12,7 @@ MINODE *root = NULL;
 
 int dev = 0;
 char buf[256] = {0};
+int blk = 0, offset = 0;
 
 void init()
 {
@@ -82,7 +83,7 @@ void ls(char* pathname)
 
 		printf("getting ino with entered pathname...\n");
 		ino = getino(dev, pathname);
-		printf("got ino!\n", root->dev);
+		printf("got ino!\n");
 		
 
 		mip = iget(3, ino);

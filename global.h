@@ -38,4 +38,5 @@ extern MINODE *root;
 
 extern int dev;
 extern char buf[256];
+extern int blk, offset;
 

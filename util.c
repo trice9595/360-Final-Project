@@ -58,6 +58,22 @@ int read_group_desc_block(int fd)
 	return gp->bg_inode_table;
 }
 
+//sets global offset and blk variables
+void mailmans_algorithm(int fd, int ino)
+{
+	//read super block for inodes per block
+	int inodes_per_block = read_super_block(fd);
+
+	//read group desc block for inodes begin block
+	int inodes_begin_block = read_group_desc_block(fd);
+
+	//find block and offset within block
+	blk = (ino - 1)/inodes_per_block + 		      
+	inodes_begin_block;
+	offset = (ino - 1)%inodes_per_block;
+
+}
+
 void print_inode()
 {
 	printf("ip->i_size: %d\n", ip->i_size);
@@ -101,7 +117,7 @@ int getino(int fd, char* pathname)
 	// read group descriptor block
 	inodes_begin_block = read_group_desc_block(fd);
 
-	printf("reading inode...\n", root->dev);
+	printf("reading inode...\n");
 
 	get_block(fd, inodes_begin_block, buf);
 	ip = (INODE *)buf + 1;
@@ -215,8 +231,7 @@ MINODE* iget(int fd, int ino)
 {
 	MINODE* mip = NULL;
 	INODE cpy;
-	int i = 0, blk, offset;
-	int inodes_per_block, inodes_begin_block;
+	int i = 0;
 	
 	for(i = 0; i < NMINODE; i++)
 	{
@@ -236,20 +251,10 @@ MINODE* iget(int fd, int ino)
 		}
 	}
 
-	//read super block for inodes per block
-	inodes_per_block = read_super_block(fd);
-
-	//read group desc block for inodes begin block
-	inodes_begin_block = read_group_desc_block(fd);
-
-	//find block and offset within block
-	blk = (ino - 1)/inodes_per_block + 		      
-	inodes_begin_block;
-	offset = (ino - 1)%inodes_per_block;
-
-	//get inode
-	get_block(fd, blk, buf);
+	mailmans_algorithm(fd, ino);
+	get_block(dev, blk, buf);
 	ip = (INODE *)buf + offset;
+	
 
 	//initialize minode properties
 	mip->inode = *ip;
@@ -263,12 +268,23 @@ MINODE* iget(int fd, int ino)
 	return mip;
 }
 
+
+//STILL NEEDS TESTING
 void iput(MINODE *mip)
 {
 	mip->refCount--;
 	if(mip->refCount > 0 && mip->dirty == 1)
 	{
 		//write back to disk
+
+		mailmans_algorithm(dev, mip->ino);
+
+		get_block(dev, blk, buf);
+		ip = (INODE *)buf + offset;
+	    
+		memcpy(ip, &mip->inode, sizeof(INODE));
+
+		put_block(dev, blk, buf);
 		
 	}else if(mip->refCount > 0 || mip->dirty == 0)
 	{
@@ -276,6 +292,9 @@ void iput(MINODE *mip)
 	}
 	
 }
+
+
+
 
 
 int findmyname(MINODE *parent, int myino, char *myname) 
