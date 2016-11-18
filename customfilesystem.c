@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "fs_level1.c"
 
 int main(int argc, char *argv[], char *env[])
 {
@@ -19,16 +20,17 @@ int main(int argc, char *argv[], char *env[])
 		return 0;
 	}
 
-	printf ("Please type a command: ");
-	scanf ("%s", input);
-
-	while(i < 256)
+	while (1)
 	{
-		splitInput[i] = NULL;
-	}
+		printf ("Please type a command: ");
+		scanf ("%s", input);
 
-	splitInput[0] = strtok(input, " ");
+		while(i < 256)
+		{
+			splitInput[i] = NULL;
+		}
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 	while (splitInput[i] = strtok(NULL, " "))
 =======
@@ -43,6 +45,27 @@ int main(int argc, char *argv[], char *env[])
 	if (!strcmp(splitInput[0], "ls"))
 	{
 		ls(splitInput[1]);
+=======
+		splitInput[0] = strtok(input, " ");
+
+		while (splitInput[i] = strtok(NULL, " "))
+		{
+			i++;
+		}
+
+		if (!strcmp(splitInput[0], "ls"))
+		{
+			ls(splitInput[1]);
+		}
+		else if (!strcmp(splitInput[0], "cd"))
+		{
+			cd(splitInput[1];
+		}
+		else
+		{
+			break;
+		}
+>>>>>>> 56505d3dbb59ee81846b883ef8f6e00f8a694a37
 	}
 }
 
@@ -70,6 +93,7 @@ int mount_root()
 
 	return 1;
 }
+<<<<<<< HEAD
 
 int ls(char* pathname)
 {
@@ -144,3 +168,5 @@ int ls(char* pathname)
 		}
 	}
 }
+=======
+>>>>>>> 56505d3dbb59ee81846b883ef8f6e00f8a694a37
