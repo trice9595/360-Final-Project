@@ -22,9 +22,20 @@ int main(int argc, char *argv[], char *env[])
 	printf ("Please type a command: ");
 	scanf ("%s", input);
 
+	while(i < 256)
+	{
+		splitInput[i] = NULL;
+	}
+
 	splitInput[0] = strtok(input, " ");
 
+<<<<<<< HEAD
 	while (splitInput[i] = strtok(NULL, " "))
+=======
+	i = 0;
+
+	while (splitInput[i] = strtok(NULL, " ")
+>>>>>>> eb1b70f6e0e1510328920099a2e3e72f7fb88ca4
 	{
 		i++;
 	}
@@ -98,7 +109,7 @@ int ls(char* pathname)
 		pathname[0] = '.';
 		pathname[1] = '\0';
 
-		printf("getting ino with entered pathname...\n");
+		printf("getting current ino ...\n");
 		ino = getino(dev, pathname);
 		printf("got ino!\n", root->dev);
 		
