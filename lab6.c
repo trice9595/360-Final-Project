@@ -67,18 +67,8 @@ void ls(char* pathname)
 	
 	if(pathname)
 	{
-		if(pathname[0] == "/")	
-		{	
+		if(pathname[0] == "/")		
 			dev = root->dev;
-		}
-		else if(pathname[0] == '\n')
-		{
-			printf ("No path entered\n");
-
-			pathname[0] = '.';
-			pathname[1] = '\0';
-		}
-		
 
 		printf("getting ino with entered pathname...\n");
 		ino = getino(dev, pathname);
