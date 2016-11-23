@@ -3,11 +3,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "fs_level1.c"
 
 int main(int argc, char *argv[], char *env[])
 {
 	int err = 0, i = 0;
-	string input;
+	char* input;
 	char* splitInput[256];
 
 	err = mount_root();
@@ -19,26 +20,40 @@ int main(int argc, char *argv[], char *env[])
 		return 0;
 	}
 
-	printf ("Please type a command: ");
-	scanf ("%s", input);
-
-	while(i < 256)
+	while (1)
 	{
-		splitInput[i] = NULL;
-	}
+		printf ("Please type a command: ");
+		scanf ("%s", input);
 
-	splitInput[0] = strtok(input, " ");
+		while(i < 256)
+		{
+			splitInput[i] = NULL;
+		}
 
-	i = 0;
+		splitInput[0] = strtok(input, " ");
 
-	while (splitInput[i] = strtok(NULL, " ")
-	{
-		i++;
-	}
+		while (splitInput[i] = strtok(NULL, " "))
+		{
+			i = 0;
+		}
 
-	if (!strcmp(splitInput[0], "ls")
-	{
-		ls(splitInput[1]);
+		while (splitInput[i] = strtok(NULL, " ")
+		{
+			i++;
+		}
+
+		if (!strcmp(splitInput[0], "ls"))
+		{
+			ls(splitInput[1]);
+		}
+		else if (!strcmp(splitInput[0], "cd"))
+		{
+			cd(splitInput[1];
+		}
+		else
+		{
+			break;
+		}
 	}
 }
 
@@ -65,78 +80,4 @@ int mount_root()
 	}
 
 	return 1;
-}
-
-int ls(char* pathname)
-{
-	int ino;
-	int i_size = 0;
-	
- 	dev = running->cwd->dev;
-
-	MINODE* mip = running->cwd;
-	
-	if(pathname)
-	{
-		if(pathname[0] == "/")	
-		{	
-			dev = root->dev;
-		}
-		else if(pathname[0] == '\n')
-		{
-			printf ("No path entered\n");
-
-			pathname[0] = '.';
-			pathname[1] = '\0';
-		}
-		
-
-		printf("getting ino with entered pathname...\n");
-		ino = getino(dev, pathname);
-		printf("got ino!\n", root->dev);
-		
-
-		mip = iget(3, ino);
-	}
-	else
-	{
-		printf ("No path entered\n");
-
-		pathname[0] = '.';
-		pathname[1] = '\0';
-
-		printf("getting current ino ...\n");
-		ino = getino(dev, pathname);
-		printf("got ino!\n", root->dev);
-		
-
-		mip = iget(3, ino);
-	}
-
-	ip = &mip->inode;
-	i_size = ip->i_size;
-
-	int i = 0;
-	for(i = 0; i < 12; i++)
-	{
-		
-		if(ip->i_block[i] != 0)
-		{
-			get_block(3, ip->i_block[i], buf);
-			dp = (DIR *)buf;
-			i_size -= dp->rec_len;
-
-
-			print_dir();
-			while(dp != NULL && i_size > 0)
-			{
-				dp = (DIR *)((char *)dp + dp->rec_len);
-				print_dir();
-				i_size -= dp->rec_len;
-			}
-			
-			if(i_size <= 0)
-				break;
-		}
-	}
 }
