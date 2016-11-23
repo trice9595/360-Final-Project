@@ -1,3 +1,5 @@
+#include "util.c"
+
 /*********** alloc_dealloc.c file *************/
 
 int tst_bit(char *buf, int bit)
@@ -48,7 +50,19 @@ int incFreeInodes(int dev)
 
 int decFreeInodes(int dev)
 {
-  // YOU DO IT
+  // I DID IT... maybe...
+	char buf[BLKSIZE];
+
+	//dec free inodes count in SUPER and GD
+	get_block(dev, 1, buf);
+	sp = (SUPER *)buf;
+	sp->s_free_inodes_count--;
+	put_block(dev, 1, buf);
+
+	get_block(dev, 2, buf);
+	gp = (GD *)buf;
+	gp->bg_free_inodes_count--;
+	put_block(dev, 2, buf);
 }
 
 int incFreeBlocks(int dev)
@@ -69,7 +83,19 @@ int incFreeBlocks(int dev)
 
 int decFreeBlocks(int dev)
 {
-  // YOU DO IT
+  // I DID IT... maybe...
+	char buf[BLKSIZE];
+
+	//dec free block count in SUPER and GD
+	get_block(dev, 1, buf);
+	sp = (SUPER *)buf;
+	sp->s_free_blocks_count--;
+	put_block(dev, 1, buf);
+
+	get_block(dev, 2, buf);
+	gp = (GD *)buf;
+	gp->bg_free_blocks_count--;
+	put_block(dev, 2, buf);
 }
 
 
