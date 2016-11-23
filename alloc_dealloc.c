@@ -145,12 +145,46 @@ idealloc(int dev, int ino)
 
 u32 balloc(int dev)
 {
-  // YOU DO IT
+  // I DID IT... maybe...
+	int i;
+ 	char buf[BLKSIZE];
+
+ 	// get block Bitmap into buf
+ 	get_block(dev, bmap, buf);
+ 
+ 	for (i=0; i < nblocks; i++){
+   if (tst_bit(buf, i)==0){
+     set_bit(buf, i);
+     put_block(dev, bmap, buf);
+
+     // update free block count in SUPER and GD
+     decFreeBlocks(dev);
+     
+     printf("balloc: block=%d\n", i+1);
+     return (i+1);
+   }
 }
 
 
 int bdealloc(int dev, int bit)
 {
-  // YOU DO IT
+  // I DID IT... maybe...
+	int i;  
+  char buf[BLKSIZE];
+
+  if (ino > nblocks){
+    printf("inumber %d out of range\n", ino);
+    return;
+  }
+
+  // get block bitmap inode
+  get_block(dev, imap, buf);
+  clr_bit(buf, ino-1);
+
+  // write buf back
+  put_block(dev, bmap, buf);
+
+  // update free inode count in SUPER and GD
+  incFreeBlocks(dev);
 }
 
