@@ -34,11 +34,6 @@ int main(int argc, char *argv[], char *env[])
 
 		while (splitInput[i] = strtok(NULL, " "))
 		{
-			i = 0;
-		}
-
-		while (splitInput[i] = strtok(NULL, " ")
-		{
 			i++;
 		}
 
