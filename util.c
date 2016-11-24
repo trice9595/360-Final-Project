@@ -259,20 +259,41 @@ void iput(MINODE *mip)
 
 int findmyname(MINODE *parent, int myino, char *myname) 
 {
-   /*
-Given the parent DIR (MINODE pointer) and myino, this function finds 
-   the name string of myino in the parent's data block. This is the SAME
-   as SEARCH() by myino, then copy its name string into myname[ ].
-*/
-	
+	/*Given the parent DIR (MINODE pointer) and myino, this function 	finds the name string of myino in the parent's data block. This is 	the SAME as SEARCH() by myino, then copy its name string into 		myname[ ].*/
 
+	ip = (INODE *) myino;
+
+	for (i=0; i<12; i++)
+	{
+	       if (ip->i_block[i] == 0)
+	          return 0;
+	}
+
+	get_block(dev, ip->iblock[i], buf);
+	dp = (DIR *) buf;
+
+	printf("myname: %s", dp->name);
+	strcpy(myname, dp->name);
 }
 
 int findino(MINODE *mip, int *myino, int *parentino)
 {
-/*
-  For a DIR Minode, extract the inumbers of . and .. 
-  Read in 0th data block. The inumbers are in the first two dir entries.
-*/
+	/*For a DIR Minode, extract the inumbers of . and .. 
+	Read in 0th data block. The inumbers are in the first two dir 		entries.*/
+
+	ip = mip->inode;
+
+	get_block(dev, ip-.iblock[0], buf);
+	dp = (DIR *) buf;
+	
+	printf("myino: %d", dp->inode);
+	myino = dp->inode;
+	
+	get_block(dev, ip-.iblock[1], buf);
+	dp = (DIR *) buf;
+	
+	printf("parentino: %d", dp->inode);
+	myino = dp->inode;
+
 	return 0;
 }
