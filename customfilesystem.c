@@ -24,11 +24,16 @@ int main(int argc, char *argv[], char *env[])
 	{
 		printf ("Please type a command: ");
 		scanf ("%s", input);
+		printf ("\n");
 
 		while(i < 256)
 		{
 			splitInput[i] = NULL;
+
+			i++;
 		}
+
+		i = 1;
 
 		splitInput[0] = strtok(input, " ");
 
@@ -41,14 +46,39 @@ int main(int argc, char *argv[], char *env[])
 		{
 			ls(splitInput[1]);
 		}
-		else if (!strcmp(splitInput[0], "cd"))
+		else if (splitinput[1] && !strcmp(splitInput[0], "cd"))
 		{
-			cd(splitInput[1];
+			cd(splitInput[1]);
+		}
+		else if (!strcmp(splitInput[0], "pwd"))
+		{
+			pwd();
+		}
+		else if (splitInput[1] && !strcmp(splitInput[0], "mkdir"))
+		{
+			mkdir(splitInput[1]);
+		}
+		else if (splitInput[1] && !strcmp(splitInput[0], "rmdir"))
+		{
+			rmdir(splitInput[1]);
+		}
+		else if (splitInput1 && !strcmp(splitInput[0], "creat"))
+		{
+			creat(splitInput[1]);
+		}
+		else if (splitInput[1] && splitInput [2] && !strcmp(splitInput[0], "symlink"))
+		{
+			symlink(splitInput[1], splitInput[2]);
+		}
+		else if (!strcmp(splitInput[0], "readlink"))
+		{
+			readlink();
 		}
 		else
 		{
-			break;
+			printf ("invalid command\n");
 		}
+		
 	}
 }
 
