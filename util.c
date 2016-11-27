@@ -6,16 +6,26 @@ off_t lseek(int fd, off_t offset, int whence);
 ssize_t read(int fd, void* buf, size_t nbyte);
 //int write(int fd, void* buf, size_t nbyte);
 
-int get_block(int fd, int blk, char buf[ ])
+int get_block(int fd, int blk, char* get_buf)
 {
   lseek(fd, (long)blk*BLKSIZE, 0);
-  read(fd, buf, BLKSIZE);
+  read(fd, get_buf, BLKSIZE);
 }
 
-int put_block(int fd, int blk, char buf[ ])
+int put_block(int fd, int blk, char* put_buf)
 {
+	printf("putting block\n");
+	char* cp = put_buf;
+	int i = 0;
   lseek(fd, (long)blk*BLKSIZE, 0);
-  write(fd, buf, BLKSIZE);
+   /*    while (cp < put_buf + BLKSIZE){
+          // print dp->inode, dp->rec_len, dp->name_len, dp->name);	  
+          dp = (DIR *)cp;
+	      print_dir();
+		fgets(NULL, sizeof(char), stdin);
+          cp += dp->rec_len;
+       }*/
+  write(fd, put_buf, BLKSIZE);
 }
 
 char** tokenize(char *pathname)
@@ -34,6 +44,29 @@ char** tokenize(char *pathname)
 	return names;
 }
 
+void read_path(char* basename, char** path_parts)
+{
+	int i = 0;
+
+	//if path is absolute
+	if(path_parts[0] == "/")
+		dev = root->dev;
+	else
+		dev = running->cwd->dev;
+
+
+	while(path_parts[i + 1] != NULL)
+	{
+		i++;
+	}
+
+	strcpy(basename, path_parts[i]);	
+	printf("basename: %s\n", basename);
+	path_parts[i] = NULL;
+
+
+}
+
 //returns inodes_per_block
 int read_super_block(int fd)
 {
@@ -49,18 +82,22 @@ int read_super_block(int fd)
 	return (1024 << sp->s_log_block_size)/sizeof(INODE);
 }
 
-int read_group_desc_block(int fd)
+void read_group_desc_block(int fd)
 {
 	get_block(fd, 2, buf);
 	gp = (GD *)buf;
 
-	return gp->bg_inode_table;
+	imap =gp->bg_inode_bitmap;
+	bmap = gp->bg_block_bitmap;
+	ninodes = gp->bg_free_inodes_count;
+	nblocks = gp->bg_free_blocks_count;
+	inodes_begin_block = gp->bg_inode_table;
 }
 
 
-void calculate_inode_block_info(int fd)
+void calculate_mount_info(int fd)
 {
-	inodes_begin_block = read_group_desc_block(fd);
+	read_group_desc_block(fd);
 	inodes_per_block = read_super_block(fd);
 }
 
@@ -69,7 +106,7 @@ void calculate_inode_block_info(int fd)
 void mailmans_algorithm(int fd, int ino)
 {	
 	if(inodes_per_block == 0 || inodes_begin_block == 0)
-		calculate_inode_block_info(fd);		
+		calculate_mount_info(fd);		
 
 	//find block and offset within block
 	blk = (ino - 1)/inodes_per_block + 		      
@@ -87,14 +124,42 @@ void print_inode()
 
 void print_dir()
 {
+	printf("address: %d\n", dp);
 	printf("dp->name: %s\n", dp->name);
 	printf("dp->file_type: %d\n", dp->file_type);
-	printf("dp->inode: %d\n\n", dp->inode);
+	printf("dp->inode: %d\n", dp->inode);
+	printf("dp->name_len: %d\n", dp->name_len);
+	printf("dp->rec_len: %d\n", dp->rec_len);
+	printf("sizeof(dp): %d\n\n", sizeof(dp));
 }
 
-int get_num_entries()(INODE* inode)
+void print_inode_contents()
 {
-   int i, num_entries; 
+   int i; 
+   char *cp;
+	
+	printf("printing inode contents...\n");
+   for (i=0; i<12; i++){  // ASSUME DIRs only has 12 direct blocks
+       if (ip->i_block[i] == 0)
+          return;
+
+       get_block(dev, ip->i_block[i], buf);
+       dp = (DIR *)buf;
+       cp = buf;
+       while (cp < buf + BLKSIZE){
+	      print_dir();
+          cp += dp->rec_len;
+          dp = (DIR *)cp;
+       }
+   }
+
+}
+
+
+
+int get_num_entries(INODE* inode)
+{
+   int i, num_entries = 0; 
    char *cp;
 
 	ip = inode;	
@@ -175,9 +240,9 @@ int getino(int* fd, char* pathname)
 		x++;
 		if(names[x] != NULL && strcmp(names[x], "") != 0)
 		{	
-			mailmans_algorithm(fd, ino);
+			mailmans_algorithm(*fd, ino);
 		
-			get_block(fd, blk, buf);
+			get_block(*fd, blk, buf);
 
 			ip = (INODE *)buf + offset;
 		}
@@ -216,6 +281,7 @@ MINODE* iget(int fd, int ino)
 	get_block(fd, blk, buf);
 	ip = (INODE *)buf + offset;
 	
+	
 	//initialize minode properties
 	mip->inode = *ip;
 	mip->refCount = 1;
@@ -236,14 +302,16 @@ void iput(MINODE *mip)
 	if(mip->refCount > 0 && mip->dirty == 1)
 	{
 		//write back to disk
-
+		printf("writing back to disk...\n");
 		mailmans_algorithm(dev, mip->ino);
 
 		get_block(dev, blk, buf);
-		ip = (INODE *)buf + offset;
+		/*ip = (INODE *)buf + offset;
 	    
 		memcpy(ip, &mip->inode, sizeof(INODE));
-
+		*/
+		ip = &mip->inode;
+		//print_inode_contents();
 		put_block(dev, blk, buf);
 		
 	}else if(mip->refCount > 0 || mip->dirty == 0)
@@ -254,26 +322,38 @@ void iput(MINODE *mip)
 }
 
 
-
-
-
 int findmyname(MINODE *parent, int myino, char *myname) 
 {
-	/*Given the parent DIR (MINODE pointer) and myino, this function 	finds the name string of myino in the parent's data block. This is 	the SAME as SEARCH() by myino, then copy its name string into 		myname[ ].*/
+	/*Given the parent DIR (MINODE pointer) and myino, this function finds the name string of myino in the parent's data block. This is the SAME as SEARCH() by myino, then copy its name string into myname[ ].*/
 
-	ip = (INODE *) myino;
+   int i; 
+   char *cp;
 
-	for (i=0; i<12; i++)
-	{
-	       if (ip->i_block[i] == 0)
-	          return 0;
+	ip = &parent->inode;
+   for (i=0; i<12; i++){  // ASSUME DIRs only has 12 direct blocks
+       if (ip->i_block[i] == 0)
+          return 0;
+
+       get_block(dev, ip->i_block[i], buf);
+       dp = (DIR *)buf;
+       cp = buf;
+       while (cp < buf + BLKSIZE){
+          // print dp->inode, dp->rec_len, dp->name_len, dp->name);
+	      printf("\ndp->inode: %d\n", dp->inode);
+	      printf("dp->rec_len: %d\n", dp->rec_len);
+	      printf("dp->name_len: %d\n", dp->name_len);
+	      printf("dp->name: %s\n\n", dp->name);
+
+          // WRITE YOUR CODE TO search for name: return its ino if found
+		  if(dp->inode == myino)
+		  {
+			  myname = dp->name;
+			  return 1;
+		  }
+          cp += dp->rec_len;
+          dp = (DIR *)cp;
+       }
 	}
-
-	get_block(dev, ip->iblock[i], buf);
-	dp = (DIR *) buf;
-
-	printf("myname: %s", dp->name);
-	strcpy(myname, dp->name);
 }
 
 int findino(MINODE *mip, int *myino, int *parentino)
@@ -281,19 +361,24 @@ int findino(MINODE *mip, int *myino, int *parentino)
 	/*For a DIR Minode, extract the inumbers of . and .. 
 	Read in 0th data block. The inumbers are in the first two dir 		entries.*/
 
-	ip = mip->inode;
+	char* cp;
+	ip = &mip->inode;
 
-	get_block(dev, ip-.iblock[0], buf);
+	get_block(dev, ip->i_block[0], buf);
 	dp = (DIR *) buf;
 	
 	printf("myino: %d", dp->inode);
-	myino = dp->inode;
+	myino = &dp->inode;
 	
-	get_block(dev, ip-.iblock[1], buf);
-	dp = (DIR *) buf;
+
+    cp += dp->rec_len;
+    dp = (DIR *)cp;
 	
 	printf("parentino: %d", dp->inode);
-	myino = dp->inode;
+	parentino = &dp->inode;
 
-	return 0;
+	return 1;
 }
+
+
+

@@ -1,5 +1,24 @@
-#include "util.c"
+#include "alloc_dealloc.c"
+#include "mkdir_creat.c"
 
+void fs_truncate(MINODE* mip)
+{
+	int i = 0;
+
+	ip = &mip->inode;
+	
+	for (i = 0; i < 12; i++)
+	{
+		ip->i_block[i];
+	}
+
+}
+
+int rm_child(MINODE* pmip, char* name)
+{
+	
+
+}
 
 void ls(char* pathname)
 {
@@ -14,7 +33,7 @@ void ls(char* pathname)
 	if(pathname[0] != '/' && pathname[0] != '\n' )
 	{
 	
-		ino = getino(dev, pathname);
+		ino = getino(&dev, pathname);
 		printf("got ino: %d\n", ino);
 		
 		mip = iget(dev, ino);
@@ -63,83 +82,18 @@ void cd(char* pathname)
 	}
 }
 
-void mkdir_fs(char* pathname)
-{
-	MINODE* pmip = NULL;
-	char basename[64];
-	char** names = tokenize(pathname);
-	int i = 0, ino;
-
-	//if path is absolute
-	if(pathname[0] == "/")
-		dev = root->dev;
-	else
-		dev = running->cwd->dev;
 
 
-	while(names[i + 1] != NULL)
-	{
-		i++;
-	}
-
-	
-	if(names[i] == NULL)
-	{
-		printf("Invalid mkdir argument\n");
-		return;
-	}
-
-	strcpy(basename, names[i]);	
-	printf("basename: %s\n", basename);
-	names[i] = NULL;
-
-	ino = getino(&dev, basename);
-	pmip = iget(dev, ino);
-	
-	if(pmip->inode.i_mode != 2)
-	{
-		printf("Invalid path\n");
-		return;
-	}
-	
-	if(search_inode(pmip, basename) != 0)
-	{
-		printf("Directory already exists\n");
-		return;
-	}
-
-	kmkdir(pmip, basename);
-
-	pmip->inode.i_links_count++;
-	pmip->dirty = 1;
-	iput(pmip);
-
-}
-
-void kmkdir(MINODE* pmip, char* basename)
-{
-	int ino = ialloc(dev);
-	MINODE* mip = iget(dev, ino);
-	
-	mip->inode.i_block[0] = blk;
-	mip->dirty = 1;
-	iput(mip);
-
-	//make data block 0 of inode to contain . and .. entries
-	//write to disk block blk
-	//enter_child(pmip, ino, basename);
-    //which enters (ino, basename) as a DIR entry to the parent INODE
-
-
-}
-
-
-int rmdir_fs(pathname)
+int rmdir_fs(char* pathname)
 {
 	//get in-memory inode
 	int num_entries;
 	int pino;
 	int ino = getino(&dev, pathname);
+
+	char basename[64];
+	char** names = tokenize(pathname);
+
 	MINODE* pmip = NULL;
 	MINODE* mip = iget(dev, ino);
 
@@ -150,6 +104,8 @@ int rmdir_fs(pathname)
 		return 0;
 	}
 
+	read_path(basename, names);
+
 	//minode is not busy
 	if(mip->refCount != 1)
 	{
@@ -158,7 +114,7 @@ int rmdir_fs(pathname)
 	}
 
 	//dir only contains . and .. entries
-	num_entries = get_num_entries(mip->inode);
+	num_entries = get_num_entries(&mip->inode);
 	if(num_entries != 2)
 	{
 		printf("DIR is not empty. DIR has %d entries\n", num_entries);
@@ -166,18 +122,22 @@ int rmdir_fs(pathname)
 	}
 
 	//get parents ino and inode
-	pino = find_ino(); //get parent from .. entry in INODE.i_block[0]
+	findino(mip, &ino, &pino); //get parent from .. entry in INODE.i_block[0]
 	pmip = iget(mip->dev, pino);
-	
+
+	 //find name from parent DIR
+	findmyname(pmip, ino, basename);
+
 	//remove name from parent directory
-	findname(pmip, ino, name); //find name from parent DIR
-	rm_child(pmip, name);
+		
+
+	rm_child(pmip, basename);
 
 	//deallocate its data blocks and inode
-	truncat(mip);
+	fs_truncate(pmip);
 	
 	//deallocate INODE
-	idalloc(mip->dev, mip->ino);
+	idealloc(mip->dev, mip->ino);
 	iput(mip);
 
 	pmip->inode.i_links_count--;
@@ -187,38 +147,8 @@ int rmdir_fs(pathname)
 	return 1;
 }
 
-void creat_fs(char* pathname)
-{
-	char filename[64];
-	char** names = tokenize(pathname);
-	int i = 0, ino;
 
-	while(names[i + 1] != NULL)
-	{
-		i++;
-	}
-
-	if(names[i] == NULL)
-	{
-		printf("Invalid creat argument\n");
-		return;
-	}
-
-	strcpy(filename, names[i]);	
-	printf("filename: %s\n", filename);
-	names[i] = NULL;
-
-	ino = getino(*names);
-
-	/*
-		similar to mdkir except:
-		1. inode.i_mode field is set to reg file type, permission bits set to 0644 for rw-r--r--, and
-		2. no data block is allocated for it so the file size is 0
-		3. Do not increment parent inodes link count
-	*/
-}
-
-void link(char* oldfile, char* newfile)
+void fs_link(char* oldfile, char* newfile)
 {
 
 	/*1. verrify oldfile and is not DIR
@@ -241,7 +171,7 @@ void link(char* oldfile, char* newfile)
 	*/
 }
 
-void unlink(char* filename)
+void fs_unlink(char* filename)
 {
 	/*
 	1. get filename's minode:
@@ -266,7 +196,7 @@ void unlink(char* filename)
 	*/
 }
 
-void symlink()
+void fs_symlink()
 {
 	/*
 	1. check: old_file must exist and new_file not yet exist
@@ -281,7 +211,7 @@ void symlink()
 }
 
 
-void readlink()
+void fs_readlink()
 {
 	/*
 	1. get file's inode into memory, verify it's a slink file or filetype 7
