@@ -36,7 +36,8 @@ extern MINODE minode[NMINODE];
 extern PROC   proc[NPROC], *running;
 extern MINODE *root;
 
-extern int dev;
+extern int dev, imap, bmap;
+extern int ninodes, nblocks;
 extern int blk, offset;
 extern int inodes_begin_block, inodes_per_block;
 extern char buf[BLKSIZE];
