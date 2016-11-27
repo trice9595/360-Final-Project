@@ -12,19 +12,10 @@ int get_block(int fd, int blk, char* get_buf)
   read(fd, get_buf, BLKSIZE);
 }
 
+
 int put_block(int fd, int blk, char* put_buf)
 {
-	printf("putting block\n");
-	char* cp = put_buf;
-	int i = 0;
   lseek(fd, (long)blk*BLKSIZE, 0);
-   /*    while (cp < put_buf + BLKSIZE){
-          // print dp->inode, dp->rec_len, dp->name_len, dp->name);	  
-          dp = (DIR *)cp;
-	      print_dir();
-		fgets(NULL, sizeof(char), stdin);
-          cp += dp->rec_len;
-       }*/
   write(fd, put_buf, BLKSIZE);
 }
 
@@ -124,7 +115,6 @@ void print_inode()
 
 void print_dir()
 {
-	printf("address: %d\n", dp);
 	printf("dp->name: %s\n", dp->name);
 	printf("dp->file_type: %d\n", dp->file_type);
 	printf("dp->inode: %d\n", dp->inode);
@@ -142,7 +132,7 @@ void print_inode_contents()
    for (i=0; i<12; i++){  // ASSUME DIRs only has 12 direct blocks
        if (ip->i_block[i] == 0)
           return;
-
+		printf("i_block #%d\n", i);
        get_block(dev, ip->i_block[i], buf);
        dp = (DIR *)buf;
        cp = buf;
@@ -302,16 +292,17 @@ void iput(MINODE *mip)
 	if(mip->refCount > 0 && mip->dirty == 1)
 	{
 		//write back to disk
-		printf("writing back to disk...\n");
+		printf("writing back to disk at ino #%d...\n", mip->ino);
 		mailmans_algorithm(dev, mip->ino);
 
 		get_block(dev, blk, buf);
-		/*ip = (INODE *)buf + offset;
-	    
+		ip = (INODE *)buf;
+
+		printf("sizeof(INODE): %d\n", sizeof(INODE));	    
+
 		memcpy(ip, &mip->inode, sizeof(INODE));
-		*/
-		ip = &mip->inode;
-		//print_inode_contents();
+		
+		print_inode_contents();
 		put_block(dev, blk, buf);
 		
 	}else if(mip->refCount > 0 || mip->dirty == 0)

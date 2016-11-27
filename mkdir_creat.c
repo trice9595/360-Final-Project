@@ -11,12 +11,11 @@ void enter_child(MINODE* pmip, int ino, char* basename)
    for (i=0; i<12; i++){  // ASSUME DIRs only has 12 direct blocks
        if (pmip->inode.i_block[i] == 0)
 		{
-		 // ip = &pmip->inode;
-		  //print_inode_contents();
           return;
 		}
 
        get_block(dev, pmip->inode.i_block[i], buf);
+		
        cp = buf;
        while (cp < buf + BLKSIZE){
           // print dp->inode, dp->rec_len, dp->name_len, dp->name);	  
@@ -25,30 +24,30 @@ void enter_child(MINODE* pmip, int ino, char* basename)
 		fgets(exBuf, sizeof(exBuf), stdin);
           cp += dp->rec_len;
        }
-		old_rec_len = dp->rec_len;
-		dp->rec_len = dp->name_len + 10;
-		print_dir();
-		old_rec_len -= dp->rec_len;
 
-		if(old_rec_len >= sizeof(*basename) + 8)
+		old_rec_len = dp->rec_len;
+		old_rec_len -= dp->name_len + 12;
+
+		printf("strlen(basename): %d\n", strlen(basename));
+		if(old_rec_len >= strlen(basename) + 8)
 		{
-	
+			
+			dp->rec_len = dp->name_len + 12;
 			dp = (DIR *)((char *)dp + dp->rec_len);
 
 			strcpy(dp->name, basename);
-			dp->name_len = sizeof(*basename);
+			dp->name_len = strlen(basename);
 			dp->rec_len = old_rec_len;
 			dp->file_type = 2;
 			dp->inode = ino;
 			print_dir();
-			printf("dp: %d, buf: %d\n", dp, buf);
-			ip = &pmip->inode;
-			print_inode_contents();
+			
 			put_block(dev, pmip->inode.i_block[i], buf);
+			break;
 		}
 		else
 		{
-			printf("i_block is full\n");
+			printf("\n\n****i_block is full***\n\n");
 		}
 	}
 	
@@ -100,7 +99,6 @@ void kmkdir(MINODE* pmip, char* basename)
 	dp->inode = pmip->ino;
 
 	//write to disk block blk
-	printf("buf: %d\n", buf);
 	put_block(dev, blk, buf);
 
 	enter_child(pmip, ino, basename);
