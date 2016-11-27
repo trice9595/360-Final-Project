@@ -37,7 +37,7 @@ void init()
 
 void mount_root()
 {		
-	dev = open("mydisk", O_RDWR);
+	dev = open("diskimage", O_RDWR);
 	root = iget(dev, 2);
 
 	//set processes current working directory to root minode
@@ -46,6 +46,7 @@ void mount_root()
 
 	//set running process to first process
 	running = &proc[0];
+
 }
 
 
@@ -69,6 +70,32 @@ int main(int argc, char* argv[])
 	fgets(path, sizeof(path), stdin);
 	printf("\n");
 	cd(path);
+
+  	printf("Enter string for ls pathname: ");
+	fgets(path, sizeof(path), stdin);
+	printf("\n");
+	ls(path);
+
+	printf("Enter string for mkdir pathname: ");
+	fgets(path, sizeof(path), stdin);
+	printf("\n");
+
+	mkdir_fs(path);
+
+  	printf("Enter string for ls pathname: ");
+	fgets(path, sizeof(path), stdin);
+	printf("\n");
+	ls(path);
+
+	printf("Enter string for cd pathname: ");
+	fgets(path, sizeof(path), stdin);
+	printf("\n");
+	cd(path);
+
+  	printf("Enter string for ls pathname: ");
+	fgets(path, sizeof(path), stdin);
+	printf("\n");
+	ls(path);
 
 	printf("Enter string for mkdir pathname: ");
 	fgets(path, sizeof(path), stdin);

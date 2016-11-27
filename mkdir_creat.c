@@ -1,69 +1,90 @@
 
+int add_dir_entry(int ino, char* basename, int rec_len)
+{
+	strcpy(dp->name, basename);
+	dp->name_len = strlen(basename);
+	dp->rec_len = rec_len;
+	dp->file_type = 2;
+	dp->inode = ino;
+	print_dir();
+}
+
+int get_last_entry(char* cp)
+{
+   while (cp < buf + BLKSIZE)
+	{
+   		dp = (DIR *)cp;
+        print_dir();
+		if(dp->rec_len <= 0)
+		{
+			printf("ERROR: dp->rec_len of %d is invalid\n", dp->rec_len);
+			break;
+		}
+        cp += dp->rec_len;
+
+
+   }
+}
 
 void enter_child(MINODE* pmip, int ino, char* basename)
 {
-	int i, old_rec_len = 0;
+	int i, need_len = 0, remain = 0, ideal_len = 0;
 	char *cp;
 	char exBuf[10];
 
+	need_len = 4*((8+strlen(basename)+3)/4);
+
 	printf("entering child...\n");
-	//ip = ;
-   for (i=0; i<12; i++){  // ASSUME DIRs only has 12 direct blocks
+   for (i=0; i<12; i++)
+	{  // ASSUME DIRs only has 12 direct blocks
        if (pmip->inode.i_block[i] == 0)
 		{
-          return;
+			return;
 		}
 
        get_block(dev, pmip->inode.i_block[i], buf);
 		
-       cp = buf;
-       while (cp < buf + BLKSIZE){
-          // print dp->inode, dp->rec_len, dp->name_len, dp->name);	  
-          dp = (DIR *)cp;
-	      print_dir();
-		fgets(exBuf, sizeof(exBuf), stdin);
-          cp += dp->rec_len;
-       }
+        cp = buf;
+		dp = (DIR *)cp;
 
-		old_rec_len = dp->rec_len;
-		old_rec_len -= dp->name_len + 12;
-
-		printf("strlen(basename): %d\n", strlen(basename));
-		if(old_rec_len >= strlen(basename) + 8)
+		if(dp->inode == 0)
 		{
-			
-			dp->rec_len = dp->name_len + 12;
-			dp = (DIR *)((char *)dp + dp->rec_len);
+			printf("*******\n********\n*******\n");
+			printf("*******\nfirst\n*******\n");
+			printf("*******\nentry\n*******\n");
+			printf("*******\ninsert\n*******\n");
+			printf("*******\n********\n*******\n");
+			add_dir_entry(ino, basename, BLKSIZE);
+			return;
+		}
+		
+	    print_dir();
+		cp += dp->rec_len;
 
-			strcpy(dp->name, basename);
-			dp->name_len = strlen(basename);
-			dp->rec_len = old_rec_len;
-			dp->file_type = 2;
-			dp->inode = ino;
-			print_dir();
-			
-			put_block(dev, pmip->inode.i_block[i], buf);
-			break;
+		get_last_entry(cp);
+
+		ideal_len = 4*((8 + dp->name_len + 3)/4);
+		remain = dp->rec_len - ideal_len;
+
+		if(remain >= need_len)
+		{
+			dp->rec_len = ideal_len;
+			dp = (DIR *)((char *)dp + dp->rec_len);
+			add_dir_entry(ino, basename, remain);
 		}
 		else
 		{
-			printf("\n\n****i_block is full***\n\n");
+			//allocate new data block?????
+			printf("*******\nallocaten*******\n");
+			printf("*******\nnewn*******\n");
+			printf("*******\ndatan*******\n");
+			printf("*******\nblockn*******\n");
+
 		}
+
+		put_block(dev, pmip->inode.i_block[i], buf);
 	}
 	
-}
-
-int char_arr_cmp(char buf[1024], char buf2[1024])
-{
-	int count = 0;
-	for(int i = 0; i < 1024; i++)
-	{
-		if(buf[i] != buf2[i])
-		{
-			count++;
-		}
-	}
-	return count;
 }
 
 
@@ -95,9 +116,11 @@ void kmkdir(MINODE* pmip, char* basename)
 	strcpy(dp->name, "..");
 	dp->name_len = 2;
 	dp->file_type = 2;
-	dp->rec_len = 12;
+	dp->rec_len = 1012;
 	dp->inode = pmip->ino;
 
+	printf("printing .. dir entry...\n");
+	print_dir();
 	//write to disk block blk
 	put_block(dev, blk, buf);
 
@@ -118,7 +141,10 @@ void mkdir_fs(char* pathname)
 	int i = 0, myino, pino;
 
 	read_path(basename, names);
-	printf("here\n");
+
+	if(basename == NULL || basename[0] == '\n')
+		return;
+
 	if(names[0] != NULL)
 	{
 		printf("names[0]: %s\n", names[0]);
@@ -128,11 +154,15 @@ void mkdir_fs(char* pathname)
 	{
 		pino = running->cwd->ino;
 	}
+	printf("dev: %d, pino: %d\n", dev, pino);
 	pmip = iget(dev, pino);
 	
 	if(!S_ISDIR(pmip->inode.i_mode))
 	{
 		printf("Invalid path with i_mode #%d\n", pmip->inode.i_mode);
+		ip = &pmip->inode;
+		print_inode();
+		print_inode_contents();
 		return;
 	}
 	

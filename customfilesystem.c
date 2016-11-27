@@ -67,15 +67,15 @@ int main(int argc, char *argv[], char *env[])
 		}
 		else if (splitInput[1] && !strcmp(splitInput[0], "mkdir"))
 		{
-			mkdir(splitInput[1]);
+			mkdir_fs(splitInput[1]);
 		}
 		else if (splitInput[1] && !strcmp(splitInput[0], "rmdir"))
 		{
-			rmdir(splitInput[1]);
+			rmdir_fs(splitInput[1]);
 		}
 		else if (splitInput1 && !strcmp(splitInput[0], "creat"))
 		{
-			creat(splitInput[1]);
+			creat_fs(splitInput[1]);
 		}
 		else if (splitInput[1] && splitInput [2] && !strcmp(splitInput[0], "symlink"))
 		{

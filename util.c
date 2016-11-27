@@ -138,6 +138,11 @@ void print_inode_contents()
        cp = buf;
        while (cp < buf + BLKSIZE){
 	      print_dir();
+		  if(dp->rec_len <= 0)
+		  {
+			printf("ERROR: dp->rec_len of %d is invalid\n", dp->rec_len);
+			break;
+	      }
           cp += dp->rec_len;
           dp = (DIR *)cp;
        }
@@ -208,7 +213,7 @@ int search_inode(INODE* inode, char *name)
 int getino(int* fd, char* pathname)
 {
 	
-	int ino;
+	int ino = 0;
 	int sum_rec_len = 0;
 	int i_size = 0;
 	int x = 0;
@@ -245,6 +250,7 @@ int getino(int* fd, char* pathname)
 MINODE* iget(int fd, int ino)
 {
 	MINODE* mip = NULL;
+	char buffer[1024];
 	int i = 0;
 	printf("searching for minode with inode #%d\n", ino);
 
@@ -255,13 +261,13 @@ MINODE* iget(int fd, int ino)
 			&& minode[i].dev == fd)
 		{
 			minode[i].refCount++;
-			printf("**minode %d found**\n\n", i);
+			printf("**minode found at 0**\n\n", i);
 			return &minode[i];				
 		}
 		//empty minode found and mip is still null
 		else if(minode[i].refCount == 0 && mip == NULL)
 		{
-			printf("**minode %d created**\n\n", i);
+			printf("**minode created at 0**\n\n", i);
 			mip = &minode[i];
 		}
 	}
@@ -271,15 +277,17 @@ MINODE* iget(int fd, int ino)
 	get_block(fd, blk, buf);
 	ip = (INODE *)buf + offset;
 	
-	
 	//initialize minode properties
 	mip->inode = *ip;
+	
 	mip->refCount = 1;
 	mip->dev = fd;
 	mip->ino = ino;
 	mip->dirty = 0;
 	mip->mounted = 0;
 	mip->mptr = NULL;
+	
+	print_inode_contents();
 
 	return mip;
 }
@@ -302,7 +310,6 @@ void iput(MINODE *mip)
 
 		memcpy(ip, &mip->inode, sizeof(INODE));
 		
-		print_inode_contents();
 		put_block(dev, blk, buf);
 		
 	}else if(mip->refCount > 0 || mip->dirty == 0)
