@@ -299,26 +299,29 @@ MINODE* iget(int fd, int ino)
 void iput(MINODE *mip)
 {
 	mip->refCount--;
-	if(mip->refCount > 0 && mip->dirty == 1)
+ 	if(mip->refCount == 0 && mip->dirty == 1)
 	{
 		//write back to disk
 		printf("writing back to disk at ino #%d...\n", mip->ino);
 		mailmans_algorithm(dev, mip->ino);
 
+		printf("blk #%d, offset #%d\n", blk, offset);
 		get_block(dev, blk, buf);
-		ip = (INODE *)buf;
+		ip = (INODE *)buf + offset;
 
 		printf("sizeof(INODE): %d\n", sizeof(INODE));	    
 
 		memcpy(ip, &mip->inode, sizeof(INODE));
 		
 		put_block(dev, blk, buf);
+
 		
-	}else if(mip->refCount > 0 || mip->dirty == 0)
-	{
-		return;
 	}
-	
+	else
+	{
+		printf("DID NOT IPUT\n");
+		printf("mip->refCount: %d, mip->dirty: %d\n", mip->refCount, mip->dirty);
+	}
 }
 
 
