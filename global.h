@@ -42,3 +42,4 @@ extern int ninodes, nblocks;
 extern int blk, offset;
 extern int inodes_begin_block, inodes_per_block;
 extern char buf[BLKSIZE];
+extern char buf2[BLKSIZE];

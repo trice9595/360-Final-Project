@@ -91,10 +91,16 @@ void enter_child(MINODE* pmip, int ino, char* basename)
 void kmkdir(MINODE* pmip, char* basename)
 {
 	char* cp;
-	int i, ino = ialloc(dev), blk = balloc(dev);
+	int i, ino = ialloc(dev);
+	int blk = balloc(dev);
 	MINODE* mip = iget(dev, ino);
 	
 	mip->inode.i_block[0] = blk;
+	for(i = 1; i < 12; i++)
+	{
+		mip->inode.i_block[i] = 0;
+	}
+
 	mip->dirty = 1;
 	iput(mip);
 
@@ -125,9 +131,9 @@ void kmkdir(MINODE* pmip, char* basename)
 	enter_child(pmip, ino, basename);
 	
 
-
     //which enters (ino, basename) as a DIR entry to the parent INODE
-	
+
+
 
 }
 
@@ -176,6 +182,7 @@ void mkdir_fs(char* pathname)
 	pmip->dirty = 1;
 	iput(pmip);
 
+	
 }
 
 

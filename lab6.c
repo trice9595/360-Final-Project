@@ -15,6 +15,7 @@ int ninodes = 0, nblocks = 0;
 int blk = 0, offset = 0;
 int inodes_begin_block = 0, inodes_per_block = 0;
 char buf[BLKSIZE] = { 0 };
+char buf2[BLKSIZE] = { 0 };
 
 void init()
 {
