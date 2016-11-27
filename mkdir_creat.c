@@ -75,10 +75,10 @@ void enter_child(MINODE* pmip, int ino, char* basename)
 		else
 		{
 			//allocate new data block?????
-			printf("*******\nallocaten*******\n");
-			printf("*******\nnewn*******\n");
-			printf("*******\ndatan*******\n");
-			printf("*******\nblockn*******\n");
+			printf("*******\nallocate\n*******\n");
+			printf("*******\nnew\n*******\n");
+			printf("*******\ndata\n*******\n");
+			printf("*******\nblock\n*******\n");
 
 		}
 
@@ -119,11 +119,9 @@ void kmkdir(MINODE* pmip, char* basename)
 	dp->rec_len = 1012;
 	dp->inode = pmip->ino;
 
-	printf("printing .. dir entry...\n");
-	print_dir();
 	//write to disk block blk
 	put_block(dev, blk, buf);
-
+   
 	enter_child(pmip, ino, basename);
 	
 

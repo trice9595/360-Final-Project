@@ -33,12 +33,14 @@ void ls(char* pathname)
 	
 	if(pathname[0] != '/' && pathname[0] != '\n' )
 	{
-	
 		ino = getino(&dev, pathname);
+
 		if(ino <= 0)
-			printf("Directory not found\n"); return;
-			
-		printf("got ino: %d\n", ino);
+		{
+			printf("Directory not found\n"); 
+			return;
+		}
+		
 		
 		mip = iget(dev, ino);
 		printf("got minode!\n");
@@ -53,7 +55,6 @@ void ls(char* pathname)
 	{
 		if(ip->i_block[i] != 0)
 		{
-			printf("here\n");
 			get_block(dev, ip->i_block[i], buf);
 
 			cp = buf;
