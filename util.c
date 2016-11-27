@@ -235,6 +235,7 @@ int getino(int* fd, char* pathname)
 		x++;
 		if(names[x] != NULL && strcmp(names[x], "") != 0)
 		{	
+			
 			mailmans_algorithm(*fd, ino);
 		
 			get_block(*fd, blk, buf);
@@ -242,7 +243,8 @@ int getino(int* fd, char* pathname)
 			ip = (INODE *)buf + offset;
 		}
 	}
-
+	
+	printf("got ino #%d\n", ino);
 	return ino;
 }
 
