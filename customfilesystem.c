@@ -76,14 +76,25 @@ int main(int argc, char *argv[], char *env[])
 		else if (splitInput1 && !strcmp(splitInput[0], "creat"))
 		{
 			creat_fs(splitInput[1]);
+<<<<<<< HEAD
+=======
+		}
+		else if (splitInput[1] && splitInput [2] && !strcmp(splitInput[0], "link"))
+		{
+			fs_link(splitInput[1], splitInput[2]);
+		}
+		else if (splitInput[1] && splitInput [2] && !strcmp(splitInput[0], "unlink"))
+		{
+			fs_unlink(splitInput[1], splitInput[2]);
+>>>>>>> 702c74118a980f516cd20fc11e51fae1ec2d2e06
 		}
 		else if (splitInput[1] && splitInput [2] && !strcmp(splitInput[0], "symlink"))
 		{
-			symlink(splitInput[1], splitInput[2]);
+			fs_symlink(splitInput[1], splitInput[2]);
 		}
 		else if (!strcmp(splitInput[0], "readlink"))
 		{
-			readlink();
+			fs_readlink();
 		}
 		else
 		{
