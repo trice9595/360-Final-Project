@@ -22,7 +22,7 @@ int rm_child(MINODE* pmip, char* name)
 	char* prev_dir;
 	int i = 0, prev_rec_len = 0, last_rec_len = 0;
 	int remaining_blk_size = 0, deleted_rec_len = 0;
-	int rmdir_place = 0;
+	char* rmdir_place = 0;
 	DIR copy;	
 
 	for(i = 0; i < 12; i++)
@@ -71,7 +71,7 @@ int rm_child(MINODE* pmip, char* name)
 					else
 					{
 						//set place of dir to copy over
-						rmdir_place = (int)cp;
+						rmdir_place = cp;
 						deleted_rec_len = dp->rec_len;
 
 						//get length of block after deletion
@@ -89,6 +89,7 @@ int rm_child(MINODE* pmip, char* name)
 								break;
 							}
 							print_dir();
+							printf("cp: %d, rmdir_place: %d\n", cp, rmdir_place);
 							fgets(ibuf, sizeof(ibuf), stdin);
 						}
 						//add deleted rec_len to last entry
