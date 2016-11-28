@@ -78,14 +78,12 @@ int main(int argc, char* argv[])
 	fgets(path, sizeof(path), stdin);
 	printf("\n");
 	ls(path);
-
-
+	
 
 	printf("Enter string for mkdir pathname: ");
 	fgets(path, sizeof(path), stdin);
 	printf("\n");
 	mkdir_fs(path);
-
 
 
   	printf("Enter string for ls pathname: ");
@@ -95,10 +93,10 @@ int main(int argc, char* argv[])
 
 
 
-	printf("Enter string for cd pathname: ");
+	printf("Enter string for rmdir pathname: ");
 	fgets(path, sizeof(path), stdin);
 	printf("\n");
-	cd(path);
+	rmdir_fs(path);
 
 
   	printf("Enter string for ls pathname: ");
@@ -107,10 +105,10 @@ int main(int argc, char* argv[])
 	ls(path);
 
 
-	printf("Enter string for mkdir pathname: ");
+	printf("Enter string for creat pathname: ");
 	fgets(path, sizeof(path), stdin);
 	printf("\n");
-	mkdir_fs(path);
+	creat_fs(path);
 
 
   	printf("Enter string for ls pathname: ");

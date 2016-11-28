@@ -61,9 +61,9 @@ void read_path(char* basename, char** path_parts)
 //returns inodes_per_block
 int read_super_block(int fd)
 {
-
-	get_block(fd, 1, buf);
-	sp = (SUPER *)buf;
+	char sbuf[1024];
+	get_block(fd, 1, sbuf);
+	sp = (SUPER *)sbuf;
 	
 	if (sp->s_magic != 0xEF53)
 	{
@@ -75,8 +75,10 @@ int read_super_block(int fd)
 
 void read_group_desc_block(int fd)
 {
-	get_block(fd, 2, buf);
-	gp = (GD *)buf;
+	
+	char sbuf[1024];
+	get_block(fd, 2, sbuf);
+	gp = (GD *)sbuf;
 
 	imap =gp->bg_inode_bitmap;
 	bmap = gp->bg_block_bitmap;
@@ -113,11 +115,14 @@ void print_inode()
 {
 	printf("printing inode...\n");
 	printf("ip->i_size: %d\n", ip->i_size);
-	printf("ip->i_blocks: %d\n\n", ip->i_blocks);
+	printf("ip->i_blocks: %d\n", ip->i_blocks);
+	printf("ip->i_mode: %d\n\n", ip->i_mode);
 }
 
 void print_dir()
 {
+	printf("dp address: %d\n", dp);
+	printf("current_name_len: %d\n", strlen(dp->name));
 	printf("dp->name: %s\n", dp->name);
 	printf("dp->file_type: %d\n", dp->file_type);
 	printf("dp->inode: %d\n", dp->inode);
@@ -128,6 +133,7 @@ void print_dir()
 
 void print_inode_contents()
 {
+	char sbuf[1024];
    int i; 
    char *cp;
 	
@@ -136,10 +142,10 @@ void print_inode_contents()
        if (ip->i_block[i] == 0)
           return;
 		printf("i_block #%d\n", i);
-       get_block(dev, ip->i_block[i], buf);
-       dp = (DIR *)buf;
-       cp = buf;
-       while (cp < buf + BLKSIZE){
+       get_block(dev, ip->i_block[i], sbuf);
+       dp = (DIR *)sbuf;
+       cp = sbuf;
+       while (cp < sbuf + BLKSIZE){
 	      print_dir();
 		  if(dp->rec_len <= 0)
 		  {
@@ -157,22 +163,24 @@ void print_inode_contents()
 
 int get_num_entries(INODE* inode)
 {
+	char sbuf[1024];
    int i, num_entries = 0; 
    char *cp;
 
 	ip = inode;	
+	printf("getting num entries\n");
    for (i=0; i<12; i++){  // ASSUME DIRs only has 12 direct blocks
        if (ip->i_block[i] == 0)
-          return 0;
+          return num_entries;
 
-       get_block(dev, ip->i_block[i], buf);
-       dp = (DIR *)buf;
-       cp = buf;
-		num_entries = 1;
-       while (cp < buf + BLKSIZE){
-          cp += dp->rec_len;
+       get_block(dev, ip->i_block[i], sbuf);
+
+       cp = sbuf;
+       while (cp < sbuf + BLKSIZE){
           dp = (DIR *)cp;
-			num_entries++;
+			print_dir();
+          cp += dp->rec_len;
+		  num_entries++;
        }
    }
    return num_entries;
@@ -183,23 +191,20 @@ int search_inode(INODE* inode, char *name)
 {
    int i; 
    char *cp;
+	char sbuf[BLKSIZE];
 
 	ip = inode;	
    for (i=0; i<12; i++){  // ASSUME DIRs only has 12 direct blocks
        if (ip->i_block[i] == 0)
           return 0;
 
-       get_block(dev, ip->i_block[i], buf);
-       dp = (DIR *)buf;
-       cp = buf;
-       while (cp < buf + BLKSIZE){
-          // print dp->inode, dp->rec_len, dp->name_len, dp->name);
-	      printf("\ndp->inode: %d\n", dp->inode);
-	      printf("dp->rec_len: %d\n", dp->rec_len);
-	      printf("dp->name_len: %d\n", dp->name_len);
-	      printf("dp->name: %s\n\n", dp->name);
+       get_block(dev, ip->i_block[i], sbuf);
+       dp = (DIR *)sbuf;
+       cp = sbuf;
+       while (cp < sbuf + BLKSIZE){
 
-          // WRITE YOUR CODE TO search for name: return its ino if found
+			print_dir();
+          //search for name: return its ino if found
 		  if(strcmp(dp->name, name) == 0)
 		  {
 			  return dp->inode;
@@ -223,15 +228,14 @@ int getino(int* fd, char* pathname)
 
 
 	ip = &running->cwd->inode;
-	print_inode();
 	i_size = ip->i_size;
-	printf("tokenizing pathname..\n");
+
 	char** names = tokenize(pathname);
 
 	while(names[x] != NULL && strcmp(names[x], "") != 0)
 	{
 
-		printf("searching for names[%d] = %s\n", x, names[x]);
+		//printf("searching for names[%d] = %s\n", x, names[x]);
 		int i = 0;
 		ino = search_inode(ip, names[x]);
 
@@ -254,7 +258,6 @@ int getino(int* fd, char* pathname)
 MINODE* iget(int fd, int ino)
 {
 	MINODE* mip = NULL;
-	char buffer[1024];
 	int i = 0;
 	printf("searching for minode with inode #%d\n", ino);
 
@@ -265,14 +268,22 @@ MINODE* iget(int fd, int ino)
 			&& minode[i].dev == fd)
 		{
 			minode[i].refCount++;
-			printf("**minode found at 0**\n\n", i);
+			printf("**minode found at %d**\n\n", i);
+			ip = &minode[i].inode;
+			print_inode();
+			print_inode_contents();
 			return &minode[i];				
 		}
 		//empty minode found and mip is still null
 		else if(minode[i].refCount == 0 && mip == NULL)
 		{
-			printf("**minode created at 0**\n\n", i);
+			printf("**minode created at %d**\n\n", i);
 			mip = &minode[i];
+			break;
+		}
+		else
+		{	
+			printf("minode[%d]: \n", i);
 		}
 	}
 
@@ -319,9 +330,6 @@ void iput(MINODE *mip)
 	else
 	{
 		printf("DID NOT IPUT\n");
-		printf("mip->refCount: %d, mip->dirty: %d, mip->ino\n", mip->refCount, mip->dirty, mip->ino);
-		ip = &mip->inode;
-		print_inode_contents();
 	}
 }
 
@@ -342,16 +350,11 @@ int findmyname(MINODE *parent, int myino, char *myname)
        dp = (DIR *)buf;
        cp = buf;
        while (cp < buf + BLKSIZE){
-          // print dp->inode, dp->rec_len, dp->name_len, dp->name);
-	      printf("\ndp->inode: %d\n", dp->inode);
-	      printf("dp->rec_len: %d\n", dp->rec_len);
-	      printf("dp->name_len: %d\n", dp->name_len);
-	      printf("dp->name: %s\n\n", dp->name);
 
-          // WRITE YOUR CODE TO search for name: return its ino if found
 		  if(dp->inode == myino)
 		  {
 			  myname = dp->name;
+			  printf("Found inode #%d with name: %s\n", myino, myname);
 			  return 1;
 		  }
           cp += dp->rec_len;
@@ -360,28 +363,25 @@ int findmyname(MINODE *parent, int myino, char *myname)
 	}
 }
 
-int findino(MINODE *mip, int *myino, int *parentino)
+int findino(MINODE *mip)
 {
 	/*For a DIR Minode, extract the inumbers of . and .. 
 	Read in 0th data block. The inumbers are in the first two dir 		entries.*/
 
-	char* cp;
+	char* cp = buf;
 	ip = &mip->inode;
 
 	get_block(dev, ip->i_block[0], buf);
-	dp = (DIR *) buf;
+	dp = (DIR *) cp;
 	
-	printf("myino: %d", dp->inode);
-	myino = &dp->inode;
-	
-
     cp += dp->rec_len;
-    dp = (DIR *)cp;
-	
-	printf("parentino: %d", dp->inode);
-	parentino = &dp->inode;
+    dp = (DIR *) cp;
+	printf("dp->name: %s\n", dp->name);
+	if(strcmp(dp->name, "..") == 0)
+		return dp->inode;
 
-	return 1;
+
+	return -1;
 }
 
 
