@@ -391,7 +391,9 @@ void fs_unlink(char* filename)
 //create generic file creation process that symlink, link, creat, and mkdir all call
 void fs_symlink(char* oldfile, char* newfile)
 {
-	int oino = 0, nino = 0, pino;
+	char* cp;
+	int i = 0;
+	int oino = 0, nino = 0, pino, blk;
 	char* dir = dirname(newfile);
 
 
@@ -401,17 +403,39 @@ void fs_symlink(char* oldfile, char* newfile)
 	if(oino == 0)
 		return;
 
-
+	
 	omip = iget(dev, oino);
 
 	nino = getino(&dev, newfile);
 	if(nino != 0)
 		return;
 
+	nino = ialloc(dev);
+	blk = balloc(dev);
 	nmip = iget(dev, nino);
+	
+	//do I need to mark it dirty and put it
+	nmip->inode.i_block[0] = blk;
+	for(i = 1; i < 12; i++)
+	{
+		nmip->inode.i_block[i] = 0;
+	}
+
+	nmip->dirty = 1;
+	iput(nmip);
+
+	//make data block 0 of inode to contain . and .. entries
+	ip = &nmip->inode;
+
+	//test if done correctly
+	ip->i_mode = 0xA1A4;
+
+	pmip = get_parent_minode(newfile);
+
+	enter_child(pmip, nino, basename(newfile), 7);
 
 	//2. Change newfile to slink type
-	nmip->inode.i_mode = 0x81A4;
+	ip->i_mode = 0xA1A4;
 
 	//3. assume length of oldfile name <= 60 chars
 	//	store oldfile name in newfiles inode.i_block[] area
@@ -425,21 +449,9 @@ void fs_symlink(char* oldfile, char* newfile)
 	nmip->dirty = 1;
 
 	iput(nmip);
-	//4. mark newfile's parent minode dirty
-	//	put(newfile's parent minode)
 	
-	if(strcmp(dir, ".") != 0)
-	{
-		pino = getino(&dev, dir);
-	}
-	else
-	{
-		pino = running->cwd->ino;
-	}
 
-	pmip = iget(dev, pino);
 	pmip->dirty = 1;
-	
 	iput(pmip);
 }
 
