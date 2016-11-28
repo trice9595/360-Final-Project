@@ -32,8 +32,9 @@ void enter_child(MINODE* pmip, int ino, char* basename)
 	char *cp;
 	char exBuf[10];
 
-	need_len = 4*((8+strlen(basename)+3)/4);
 
+	need_len = 4*((8+strlen(basename)+3)/4);
+	
 	printf("entering child...\n");
    for (i=0; i<12; i++)
 	{  // ASSUME DIRs only has 12 direct blocks
@@ -88,13 +89,15 @@ void enter_child(MINODE* pmip, int ino, char* basename)
 }
 
 
-void kmkdir(MINODE* pmip, char* basename)
+int kmkdir(MINODE* pmip, char* basename)
 {
 	char* cp;
 	int i, ino = ialloc(dev);
 	int blk = balloc(dev);
 	MINODE* mip = iget(dev, ino);
 	
+
+	printf("parent directory block #%d allocated\n", blk);
 	mip->inode.i_block[0] = blk;
 	for(i = 1; i < 12; i++)
 	{
@@ -109,7 +112,11 @@ void kmkdir(MINODE* pmip, char* basename)
 
 	get_block(dev, ip->i_block[0], buf);
 
-	dp = (DIR *)buf;
+	printf("buffer starts at address %d\n", buf);
+
+	cp = buf;
+
+	dp = (DIR *)cp;
 	strcpy(dp->name, ".");
 	dp->name_len = 1;
 	dp->file_type = 2;
@@ -117,7 +124,8 @@ void kmkdir(MINODE* pmip, char* basename)
 	dp->inode = ino;
 
 
-    dp = dp + dp->rec_len;
+    cp += dp->rec_len;
+	dp = (DIR *)cp;
     
 	strcpy(dp->name, "..");
 	dp->name_len = 2;
@@ -127,14 +135,16 @@ void kmkdir(MINODE* pmip, char* basename)
 
 	//write to disk block blk
 	put_block(dev, blk, buf);
-   
+
+
+
 	enter_child(pmip, ino, basename);
 	
 
     //which enters (ino, basename) as a DIR entry to the parent INODE
 
 
-
+	return blk;
 }
 
 void mkdir_fs(char* pathname)
@@ -143,6 +153,8 @@ void mkdir_fs(char* pathname)
 	char basename[64];
 	char** names = tokenize(pathname);
 	int i = 0, myino, pino;
+
+	int test_block;
 
 	read_path(basename, names);
 
@@ -176,13 +188,20 @@ void mkdir_fs(char* pathname)
 		return;
 	}
 
-	kmkdir(pmip, basename);
+	test_block = kmkdir(pmip, basename);
 
 	pmip->inode.i_links_count++;
 	pmip->dirty = 1;
 	iput(pmip);
 
-	
+	get_block(dev, test_block, buf);
+
+	printf("\nblock: %d\n\n", test_block);
+	dp = (DIR *)buf;
+	print_dir();
+
+    dp = dp + dp->rec_len;
+	print_dir();
 }
 
 
