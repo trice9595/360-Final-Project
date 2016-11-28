@@ -1,3 +1,4 @@
+#include <libgen.h>
 #include "alloc_dealloc.c"
 #include "mkdir_creat.c"
 
@@ -165,8 +166,11 @@ void ls(char* pathname)
 		    }
 			
 		}
+		else
+		{
+			//printf("i_block[%d] is empty\n", i);
+		}
 	}
-	iput(mip);
 }
 
 
@@ -217,8 +221,7 @@ int rmdir_fs(char* pathname)
 		return 0;
 	}
 
-	char basename[64];
-	char** names = tokenize(pathname);
+	char* base = basename(pathname);
 
 	MINODE* pmip = NULL;
 	MINODE* mip = iget(dev, ino);
@@ -234,7 +237,6 @@ int rmdir_fs(char* pathname)
 		print_inode_contents();
 	}
 
-	read_path(basename, names);
 
 	//minode is not busy
 	if(mip->refCount != 1)
@@ -258,10 +260,10 @@ int rmdir_fs(char* pathname)
 	pmip = iget(mip->dev, pino);
 
 	 //find name from parent DIR
-	findmyname(pmip, ino, basename);
+	findmyname(pmip, ino, base);
 
 	//remove name from parent directory	
-	rm_child(pmip, basename);
+	rm_child(pmip, base);
 
 	//deallocate its data blocks and inode
 	fs_truncate(mip);
@@ -283,17 +285,20 @@ void fs_link(char* oldfile, char* newfile)
 
 	MINODE *omip = NULL, *pmip = NULL;
 	int oino = 0, nino = 0, pino = 0;
-
+	char* newdir = dirname(newfile);
 
 	//1. verify oldfile and is not DIR
 	oino = getino(&dev, oldfile);
+
 	if(oino == 0)
 	{
 		printf("File does not exist\n");
 		return;
 	}
 	
+
 	omip = iget(dev, oino);
+
 	if(S_ISDIR(omip->inode.i_mode))
 	{
 		printf("File is directory\n");	
@@ -304,11 +309,30 @@ void fs_link(char* oldfile, char* newfile)
 	nino = getino(&dev, newfile);
 	if(nino != 0)
 		return;
+		
 
 	//3. creat entry in new_parent DIR with same ino
 	//pmip -> minode of dirname(newfile)
-	pino = getino(&dev, newfile);
+
+	if(strcmp(newdir, ".") != 0)
+	{
+		pino = getino(&dev, newdir);
+	}
+	else
+	{
+		pino = running->cwd->ino;
+	}
+
+
+	if(pino <= 0)
+	{
+		printf("pino not found\n");
+		return;
+	}
+	
+
 	pmip = iget(dev, pino);
+
 	enter_child(pmip, omip->ino, basename(newfile), 7);
 
 	omip->inode.i_links_count++;
@@ -323,14 +347,30 @@ void fs_unlink(char* filename)
 	
 	int ino = 0, pino = 0;
 	MINODE* mip = NULL, *pmip = NULL;
+	char* dir = dirname(filename);
+
 
 	//1. get filename's minode:
 	ino = getino(&dev, filename);
 	mip = iget(dev, ino);
+	printf("ino: %d\n", ino);
+	ip = &mip->inode;
+	print_inode_contents();	
 
 	//2. remove basename from parent DIR
-	pino = findino(mip);
+	if(strcmp(dir, ".") != 0)
+	{
+		pino = getino(&dev, dir);
+	}
+	else
+	{
+		pino = running->cwd->ino;
+	}
+
 	pmip = iget(dev, pino);
+	printf("pino: %d\n", pino);
+	ip = &pmip->inode;
+	print_inode_contents();	
 
 	rm_child(pmip, basename(filename));
 	pmip->dirty = 1;

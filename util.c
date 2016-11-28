@@ -19,12 +19,12 @@ int put_block(int fd, int blk, char* put_buf)
   write(fd, put_buf, BLKSIZE);
 }
 
-char** tokenize(char *pathname)
+char** tokenize(char *pathname, char **names)
 {
 	int i = 0;
-	char** names = malloc(64*sizeof(char *));	
+	//char** names = malloc(64*sizeof(char *));	
 	const char* delim = "/";
-
+	
 	names[i] = strtok(pathname, delim);
 	while(names[i] != NULL)
 	{
@@ -32,7 +32,6 @@ char** tokenize(char *pathname)
 		names[i] = strtok(NULL, delim);
 	}
 	names[i - 1] = strtok(names[i - 1], "\n");
-	return names;
 }
 
 void read_path(char* basename, char** path_parts)
@@ -202,7 +201,7 @@ int search_inode(INODE* inode, char *name)
        cp = sbuf;
        while (cp < sbuf + BLKSIZE){
 
-			print_dir();
+			//print_dir();
           //search for name: return its ino if found
 		  if(strcmp(dp->name, name) == 0)
 		  {
@@ -219,22 +218,25 @@ int search_inode(INODE* inode, char *name)
 
 int getino(int* fd, char* pathname)
 {
-	
+	char* names[512];	
 	int ino = 0;
-	int sum_rec_len = 0;
-	int i_size = 0;
 	int x = 0;
 
+	ip =&running->cwd->inode;
 
-	ip = &running->cwd->inode;
-	i_size = ip->i_size;
-
-	char** names = tokenize(pathname);
+	if(strcmp(pathname, "."))
+	{
+		tokenize(pathname, names);
+	}
+	else
+	{
+		names[0] = pathname;
+	}
 
 	while(names[x] != NULL && strcmp(names[x], "") != 0)
 	{
-
-		//printf("searching for names[%d] = %s\n", x, names[x]);
+		
+		printf("searching for names[%d] = %s\n", x, names[x]);
 		int i = 0;
 		ino = search_inode(ip, names[x]);
 
@@ -268,9 +270,6 @@ MINODE* iget(int fd, int ino)
 		{
 			minode[i].refCount++;
 			printf("**minode found at %d**\n\n", i);
-			ip = &minode[i].inode;
-			print_inode();
-			print_inode_contents();
 			return &minode[i];				
 		}
 		//empty minode found and mip is still null
@@ -285,15 +284,13 @@ MINODE* iget(int fd, int ino)
 			printf("minode[%d]: \n", i);
 		}
 	}
-
+	
 	mailmans_algorithm(fd, ino);
-
 	get_block(fd, blk, buf);
 	ip = (INODE *)buf + offset;
 	
 	//initialize minode properties
 	mip->inode = *ip;
-	
 	mip->refCount = 1;
 	mip->dev = fd;
 	mip->ino = ino;
@@ -301,7 +298,6 @@ MINODE* iget(int fd, int ino)
 	mip->mounted = 0;
 	mip->mptr = NULL;
 	
-	print_inode_contents();
 
 	return mip;
 }
@@ -369,12 +365,16 @@ int findino(MINODE *mip)
 
 	char* cp = buf;
 	ip = &mip->inode;
+	print_inode();
 
 	get_block(dev, ip->i_block[0], buf);
 	dp = (DIR *) cp;
-	
+	print_dir();
+
     cp += dp->rec_len;
     dp = (DIR *) cp;
+	print_dir();
+
 	printf("dp->name: %s\n", dp->name);
 	if(strcmp(dp->name, "..") == 0)
 		return dp->inode;

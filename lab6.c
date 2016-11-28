@@ -38,7 +38,7 @@ void init()
 
 void mount_root()
 {		
-	dev = open("mydisk", O_RDWR);
+	dev = open("diskimage", O_RDWR);
 	root = iget(dev, 2);
 
 	//set processes current working directory to root minode
@@ -54,9 +54,10 @@ void mount_root()
 int main(int argc, char* argv[])
 {
 	ip = malloc(sizeof(INODE));
-	struct stat mystat;	
-    
+	struct stat mystat;
+
 	char path[256];
+	char path2[256];
 
 	init();
     mount_root();
@@ -78,13 +79,23 @@ int main(int argc, char* argv[])
 	fgets(path, sizeof(path), stdin);
 	printf("\n");
 	ls(path);
-	
 
-	printf("Enter string for mkdir pathname: ");
+	printf("Enter string for creat pathname: ");
 	fgets(path, sizeof(path), stdin);
 	printf("\n");
-	mkdir_fs(path);
+	creat_fs(path);
 
+  	printf("Enter string for ls pathname: ");
+	fgets(path, sizeof(path), stdin);
+	printf("\n");
+	ls(path);
+
+	printf("Enter string for link pathname: ");
+	fgets(path, sizeof(path), stdin);
+	printf("\n");
+	fgets(path2, sizeof(path2), stdin);
+	printf("path: %s, path2: %s\n", path, path2);
+	fs_link(path, path2);
 
   	printf("Enter string for ls pathname: ");
 	fgets(path, sizeof(path), stdin);
@@ -93,10 +104,10 @@ int main(int argc, char* argv[])
 
 
 
-	printf("Enter string for rmdir pathname: ");
+	printf("Enter string for unlink pathname: ");
 	fgets(path, sizeof(path), stdin);
 	printf("\n");
-	rmdir_fs(path);
+	fs_unlink(path);
 
 
   	printf("Enter string for ls pathname: ");

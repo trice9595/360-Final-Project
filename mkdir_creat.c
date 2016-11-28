@@ -148,21 +148,20 @@ void kmkdir(MINODE* pmip, char* basename)
 void mkdir_fs(char* pathname)
 {
 	MINODE* pmip = NULL;
-	char basename[64];
-	char** names = tokenize(pathname);
+	char* base = basename(pathname);
+	printf("|%c|", base[strlen(base)]);
+	char* dir = dirname(pathname);
 	int i = 0, myino, pino;
 
-	int test_block;
+	base[strlen(base) - 1] = '\0';
 
-	read_path(basename, names);
-
-	if(basename == NULL || basename[0] == '\n')
+	if(base == NULL || strcmp(base, ".") == 0)
 		return;
 
-	if(names[0] != NULL)
+	if(strcmp(dir, ".") != 0)
 	{
-		printf("names[0]: %s\n", names[0]);
-		pino = getino(&dev, *names);
+		printf("dir: %s\n", dir);
+		pino = getino(&dev, dir);
 	}
 	else
 	{
@@ -179,13 +178,13 @@ void mkdir_fs(char* pathname)
 		return;
 	}
 	
-	if(search_inode(&pmip->inode, basename) != 0)
+	if(search_inode(&pmip->inode, base) != 0)
 	{
 		printf("Directory already exists\n");
 		return;
 	}
 
-	kmkdir(pmip, basename);
+	kmkdir(pmip, base);
 
 	pmip->inode.i_links_count++;
 	pmip->dirty = 1;
@@ -223,18 +222,21 @@ void kcreat(MINODE* pmip, char* basename)
 void creat_fs(char* pathname)
 {
 	MINODE* pmip = NULL;
-	char basename[64];
-	char** names = tokenize(pathname);
+	char* base = basename(pathname);
+	char* dir = dirname(pathname);
+
+	base[strlen(base) - 1] = '\0';
 	int i = 0, myino, pino;
+	printf("base: |%s|\n", base);
 
-	int test_block;
-
-	read_path(basename, names);
-
-	if(basename == NULL || basename[0] == '\n')
+	if(strcmp(base, ".") == 0 || 
+		strcmp(base, "/") == 0)
 		return;
 
-	if(names[0] != NULL)
+	printf("getting pino with dir: %s\n", dir);
+	pino = getino(&dev, dir);
+	printf("got pino #%d\n", pino);
+	/*if(names[0] != NULL)
 	{
 		printf("names[0]: %s\n", names[0]);
 		pino = getino(&dev, *names);
@@ -243,35 +245,27 @@ void creat_fs(char* pathname)
 	{
 		pino = running->cwd->ino;
 	}
+	*/
+	
 	pmip = iget(dev, pino);
 	
 	if(!S_ISDIR(pmip->inode.i_mode))
 	{
 		printf("Invalid path with i_mode #%d\n", pmip->inode.i_mode);
 		ip = &pmip->inode;
-		print_inode();
-		print_inode_contents();
 		return;
 	}
 	
-	if(search_inode(&pmip->inode, basename) != 0)
+	if(search_inode(&pmip->inode, base) != 0)
 	{
 		printf("File already exists\n");
 		return;
 	}
 
-	kcreat(pmip, basename);
+	kcreat(pmip, base);
 
 	pmip->inode.i_links_count++;
 	pmip->dirty = 1;
 	iput(pmip);
-
-	get_block(dev, test_block, buf);
-
-	dp = (DIR *)buf;
-	print_dir();
-
-    dp = dp + dp->rec_len;
-	print_dir();
 }
 
