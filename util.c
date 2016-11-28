@@ -12,7 +12,6 @@ int get_block(int fd, int blk, char* get_buf)
   read(fd, get_buf, BLKSIZE);
 }
 
-
 int put_block(int fd, int blk, char* put_buf)
 {
   lseek(fd, (long)blk*BLKSIZE, 0);
@@ -218,7 +217,7 @@ int search_inode(INODE* inode, char *name)
 
 int getino(int* fd, char* pathname)
 {
-	char* names[512];	
+	char* names[512] = {NULL};
 	int ino = 0;
 	int x = 0;
 
@@ -239,11 +238,9 @@ int getino(int* fd, char* pathname)
 		printf("searching for names[%d] = %s\n", x, names[x]);
 		int i = 0;
 		ino = search_inode(ip, names[x]);
-
 		x++;
 		if(names[x] != NULL && strcmp(names[x], "") != 0)
 		{	
-			
 			mailmans_algorithm(*fd, ino);
 		
 			get_block(*fd, blk, buf);
@@ -251,7 +248,6 @@ int getino(int* fd, char* pathname)
 			ip = (INODE *)buf + offset;
 		}
 	}
-	
 	return ino;
 }
 
@@ -297,6 +293,7 @@ MINODE* iget(int fd, int ino)
 	mip->dirty = 0;
 	mip->mounted = 0;
 	mip->mptr = NULL;
+	mip->lock = 1;
 	
 
 	return mip;
@@ -307,6 +304,7 @@ MINODE* iget(int fd, int ino)
 void iput(MINODE *mip)
 {
 	mip->refCount--;
+	mip->lock = 0;
  	if(mip->refCount == 0 && mip->dirty == 1)
 	{
 		//write back to disk
@@ -320,12 +318,12 @@ void iput(MINODE *mip)
 		
 		put_block(dev, blk, buf);
 
-		
 	}
 	else
 	{
-		printf("DID NOT IPUT\n");
+		printf("did not write to disk\n");
 	}
+	mip = NULL;
 }
 
 

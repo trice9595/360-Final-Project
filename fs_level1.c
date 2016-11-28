@@ -16,6 +16,10 @@ void fs_truncate(MINODE* mip)
 
 }
 
+int get_permission(MINODE* mip)
+{
+	return mip->inode.i_mode;
+}
 
 int rm_child(MINODE* pmip, char* name)
 {
@@ -89,8 +93,7 @@ int rm_child(MINODE* pmip, char* name)
 								printf("rec_len is less than or equal to zero\n");
 								break;
 							}
-							print_dir();
-							printf("cp: %d, rmdir_place: %d\n", cp, rmdir_place);
+							
 							fgets(ibuf, sizeof(ibuf), stdin);
 						}
 						//add deleted rec_len to last entry
@@ -122,23 +125,26 @@ void ls(char* pathname)
 
  	dev = running->cwd->dev;
 
-	MINODE* mip = running->cwd;
+	MINODE* mip = NULL;
 	
 	
-	if(pathname[0] != '/' && pathname[0] != '\n' )
+	if(pathname[0] == '\n' )
 	{
-		ino = getino(&dev, pathname);
-		printf("ino #%d\n", ino);
-		if(ino <= 0)
-		{
-			printf("Directory not found\n"); 
-			return;
-		}
-		
-		
-		mip = iget(dev, ino);
-		
+		pathname[0] = '.';
 	}
+
+	ino = getino(&dev, basename(pathname));
+	printf("ino #%d\n", ino);
+
+	if(ino <= 0)
+	{
+		printf("Directory not found\n"); 
+		return;
+	}
+	
+	
+	mip = iget(dev, ino);
+
 
 	ip = &mip->inode;
 
@@ -171,12 +177,13 @@ void ls(char* pathname)
 			//printf("i_block[%d] is empty\n", i);
 		}
 	}
+	iput(mip);
 }
 
 
 void cd(char* pathname)
 {
-	MINODE* mip = NULL;
+	MINODE* mip = NULL, *omip = running->cwd;
 	int ino;
 	if(pathname == NULL || strcmp(pathname, "/") == 0 || 
 		pathname[0] == '\n')
@@ -194,6 +201,7 @@ void cd(char* pathname)
 			if(S_ISDIR(mip->inode.i_mode))
 			{
 				running->cwd = mip;
+				iput(omip);
 			}
 			else
 			{
@@ -396,7 +404,6 @@ void fs_symlink(char* oldfile, char* newfile)
 	int oino = 0, nino = 0, pino, blk;
 	char* dir = dirname(newfile);
 
-
 	MINODE* omip = NULL, *nmip = NULL, *pmip = NULL;
 	//1. check: old_file must exist and new_file not yet exist
 	oino = getino(&dev, oldfile);
@@ -430,8 +437,9 @@ void fs_symlink(char* oldfile, char* newfile)
 	//test if done correctly
 	ip->i_mode = 0xA1A4;
 
+	printf("1newfile: %s\n", newfile);
 	pmip = get_parent_minode(newfile);
-
+	printf("7newfile: %s\n", newfile);
 	enter_child(pmip, nino, basename(newfile), 7);
 
 	//2. Change newfile to slink type
