@@ -44,7 +44,6 @@ void ls(char* pathname)
 		
 		mip = iget(dev, ino);
 		
-		printf("blk: %d, offset: %d\n", blk, offset);
 		printf("got minode!\n");
 	}
 
@@ -59,8 +58,6 @@ void ls(char* pathname)
 		{
 			get_block(dev, ip->i_block[i], buf);
 			
-			printf("buffer starts at address %d\n", buf);
-			cp = buf;
 
 		    while (cp < buf + BLKSIZE)
 			{
@@ -72,8 +69,6 @@ void ls(char* pathname)
 				}
 				print_dir();
 				cp += dp->rec_len;
-				printf("cp: %d, buf+BLKSIZE: %d\n",
-				 cp, buf+BLKSIZE);
 
 
 		    }

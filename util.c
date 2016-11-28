@@ -247,7 +247,6 @@ int getino(int* fd, char* pathname)
 		}
 	}
 	
-	printf("got ino #%d\n", ino);
 	return ino;
 }
 
@@ -308,11 +307,8 @@ void iput(MINODE *mip)
 		printf("writing back to disk at ino #%d...\n", mip->ino);
 		mailmans_algorithm(dev, mip->ino);
 
-		printf("blk #%d, offset #%d\n", blk, offset);
 		get_block(dev, blk, buf);
 		ip = (INODE *)buf + offset;
-
-		printf("sizeof(INODE): %d\n", sizeof(INODE));	    
 
 		memcpy(ip, &mip->inode, sizeof(INODE));
 		
