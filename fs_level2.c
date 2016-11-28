@@ -8,7 +8,7 @@ int fs_open(char* file, int flags)
 
 	if(flags < 0 || flags > 3)
 	{
-		printf("invalid flag\n");
+		printf("invalid flag: %d\n", flags);
 		return -1;
 	}
 
@@ -196,7 +196,7 @@ int read_file(int fd, char fbuf[], int nbytes)
 	return myread(fd, fbuf, nbytes);
 }
 
-void write_file(int fd, char* fbuf, int nbytes)
+int write_file(int fd, char* fbuf, int nbytes)
 {
 	MINODE* mip = NULL;
 	int mode = running->fd[fd]->mode;
@@ -218,7 +218,7 @@ void write_file(int fd, char* fbuf, int nbytes)
 
 }
 
-void mywrite(int fd, char* fbuf, int nbytes)
+int mywrite(int fd, char* fbuf, int nbytes)
 {
 	char writebuf[BLKSIZE];
 	MINODE* mip = running->fd[fd]->mptr;
@@ -258,42 +258,6 @@ void mywrite(int fd, char* fbuf, int nbytes)
 	mip->dirty = 1;
    printf("mywrite: wrote %d char into file descriptor %d\n", nbytes, fd);  
    return nbytes;   //number of bytes written
-}
-
-void fs_write()
-{
-/*for regular files
-	1. lock minode;
-
-	2. count = 0; //number of bytes written
-
-	3. while (nbytes)
-	   {
-		compute logical block: lbk = oftp->offset / BLOCK_SIZE;
-		compute start byte: start = oftp->offset % BLOCKSIZE;
-
-		4. convert lbk to physical block number, blk;
-
-		5. read_block(dev, blk, kbuf); //read blk into kbuf[BLKSIZE];
-		   char* cp = kbuf + start; remain = BLKKSIZE - start;
-
-		6. while (remain)
-		   {//copy bytes from kbuf[] to ubuf[]
-			put_ubyte(*cp++, *ubuf++);
-			offset++; count++; //inc offset, count;
-			remain--; nbytes--; //dec remain, nbytes;
-			if (offset > fileSize) fileSize++; //inc file size
-			if (nbytes <= 0) break;
-		   }
-
-		7. write_block (dev, blk, kbuf);
-	   }
-
-	8. set minode dirty = 1; //mark minode dirty for iput()
-
-	   unlock (minode);
-	   return count;
-*/
 }
 
 void fs_cat()

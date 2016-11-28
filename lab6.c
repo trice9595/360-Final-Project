@@ -38,7 +38,7 @@ void init()
 
 void mount_root()
 {		
-	dev = open("mydisk", O_RDWR);
+	dev = open("diskimage", O_RDWR);
 	root = iget(dev, 2);
 
 	//set processes current working directory to root minode
