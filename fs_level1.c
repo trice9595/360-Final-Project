@@ -108,19 +108,22 @@ int rm_child(MINODE* pmip, char* name)
    }
     ip = &pmip->inode;
 	print_inode_contents();
-	
 }
+
 
 void ls(char* pathname)
 {
 
 	int ino;
 	char* cp;
+	int i_size = 0;
+>>>>>>> a378548c1be455b8df4e53bc327a07129d6962fd
 	
  	dev = running->cwd->dev;
 
 	MINODE* mip = running->cwd;
 	
+<<<<<<< HEAD
 	
 	if(pathname[0] != '/' && pathname[0] != '\n' )
 	{
@@ -135,6 +138,13 @@ void ls(char* pathname)
 		
 		mip = iget(dev, ino);
 		
+	if(pathname[0] != '/' && pathname[0] != '\n' )
+	{
+	
+		ino = getino(&dev, pathname);
+		printf("got ino: %d\n", ino);
+		
+		mip = iget(dev, ino);
 		printf("got minode!\n");
 	}
 
@@ -209,6 +219,7 @@ int rmdir_fs(char* pathname)
 	int num_entries;
 	int pino;
 	int ino = getino(&dev, pathname);
+
 	if(ino == 0)
 	{
 		printf("File not found\n");
@@ -222,6 +233,7 @@ int rmdir_fs(char* pathname)
 	MINODE* mip = iget(dev, ino);
 
 	//verify inode is a dir
+
 	if(!S_ISDIR(mip->inode.i_mode))
 	{
 		
@@ -229,7 +241,6 @@ int rmdir_fs(char* pathname)
 		ip = &pmip->inode;
 		print_inode();
 		print_inode_contents();
-		return 0;
 	}
 
 	read_path(basename, names);
@@ -252,8 +263,7 @@ int rmdir_fs(char* pathname)
 	//get parents ino and inode
 	pino = findino(mip); 
 
-	printf("pino: %d\n", pino);
-//get parent from .. entry in INODE.i_block[0]	
+	 //get parent from .. entry in INODE.i_block[0]
 	pmip = iget(mip->dev, pino);
 
 	 //find name from parent DIR
@@ -264,7 +274,7 @@ int rmdir_fs(char* pathname)
 
 	//deallocate its data blocks and inode
 	fs_truncate(mip);
-	
+
 	//deallocate INODE
 	idealloc(mip->dev, mip->ino);
 	iput(mip);
@@ -280,24 +290,36 @@ int rmdir_fs(char* pathname)
 void fs_link(char* oldfile, char* newfile)
 {
 
-	/*1. verrify oldfile and is not DIR
-	int oino = getino(&odev, oldfile);
-	MINODE* omip = iget(odev, oldfile)
+	
+	int fd = open(oldfile, O_RDONLY); 
 
-	2. new file must not exist yet
-	int nino = getino(&ndev, newfile); must retu
+	int oino = getino(fd, oldfile);
+	
+	int xd = open (newfile, O_CREAT);
+
+	int nino = getino(xd, newfile);
+
+	int odev = search_inode(oino ,oldfile);
+	int ndev = search_inode(nino ,newfile);
+
+	//1. verify oldfile and is not DIR
+	oino = getino(&odev, oldfile);
+	MINODE* omip = iget(odev, oldfile);
+
+	//2. new file must not exist yet
+	nino = getino(&ndev, newfile);
 	if(nino != 0)
 		return;
 
-	3. creat entry in new_parent DIR with sae ino
-	pmip -> minode of dirname(newfile)
-	enter_name(pmip, omip->ino, basename(newfile))
+	//3. creat entry in new_parent DIR with same ino
+	//pmip -> minode of dirname(newfile)
+	MINODE* pmip = iget(ndev, newfile);
+	enter_name(pmip, omip->ino, basename(newfile));
 
-	4. omip->inode.i_links_count++;
+	omip->inode.i_links_count++;
 	omip->dirty = 1;
 	iput(omip);
-	iput(omip);
-	*/
+	iput(omip);	
 }
 
 void fs_unlink(char* filename)
@@ -325,18 +347,36 @@ void fs_unlink(char* filename)
 	*/
 }
 
-void fs_symlink()
+void fs_symlink(char* oldfile, char* newfile)
 {
-	/*
-	1. check: old_file must exist and new_file not yet exist
-	2. create newfile; change newfile to slink type  or filetype 7
-	3. assume length of oldfile name <= 60 chars
-		store oldfile name in newfiles inode.i_block[] area
-		mark new files minode dirty
-		iput(newfile's minode)
-	4. mark newfile's parent minode dirty
-		put(newfile's parent minode)
-	*/
+	int fd = open(oldfile, O_RDONLY); 
+
+	int oino = getino(fd, oldfile);
+	
+	int xd = open (newfile, O_CREAT);
+
+	int nino = getino(xd, newfile);
+
+	int odev = search_inode(oino ,oldfile);
+	int ndev = search_inode(nino ,newfile);	
+
+	//1. check: old_file must exist and new_file not yet exist
+	oino = getino(&odev, oldfile);
+	MINODE* omip = iget(odev, oldfile);
+	nino = getino(&ndev, newfile);
+	if(nino != 0)
+		return;
+
+	MINODE* nmip = iget(ndev, newfile);
+
+	//2. Change newfile to slink type  or filetype 7
+	//3. assume length of oldfile name <= 60 chars
+	//	store oldfile name in newfiles inode.i_block[] area
+	//	mark new files minode dirty
+		iput(nmip);
+	//4. mark newfile's parent minode dirty
+	//	put(newfile's parent minode)
+>>>>>>> a378548c1be455b8df4e53bc327a07129d6962fd
 }
 
 
