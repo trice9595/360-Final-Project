@@ -9,15 +9,106 @@ void fs_truncate(MINODE* mip)
 	
 	for (i = 0; i < 12; i++)
 	{
-		ip->i_block[i];
+		bdealloc(dev, ip->i_block[i]);
+		ip->i_block[i] = 0;
 	}
 
 }
 
+
 int rm_child(MINODE* pmip, char* name)
 {
-	
+	char* cp, ibuf[10];
+	char* prev_dir;
+	int i = 0, prev_rec_len = 0, last_rec_len = 0;
+	int remaining_blk_size = 0, deleted_rec_len = 0;
+	int rmdir_place = 0;
+	DIR copy;	
 
+	for(i = 0; i < 12; i++)
+	{
+		if(pmip->inode.i_block[i] == 0)
+			break;
+
+        get_block(dev, pmip->inode.i_block[i], buf);
+		
+        cp = buf;
+
+		while (cp < buf + BLKSIZE)
+		{
+	   		dp = (DIR *)cp;
+			if(dp->rec_len <= 0)
+			{
+				printf("ERROR: dp->rec_len of %d is invalid\n", dp->rec_len);
+				break;
+			}
+
+			if(strcmp(dp->name, name) != 0)
+			{
+				prev_rec_len = dp->rec_len;
+				cp += dp->rec_len;
+			}
+			else
+			{
+				printf("Name found\n");
+				//only entry in block
+				if(dp->rec_len == BLKSIZE)
+				{
+					dp->inode = 0;
+				}
+				else
+				{
+					//last entry in block
+					if(cp + dp->rec_len >= buf + BLKSIZE)
+					{
+						last_rec_len = dp->rec_len;
+						cp -= prev_rec_len;
+						dp = (DIR *)cp;
+
+						dp->rec_len += last_rec_len;
+					}
+					//middle of block somewhere
+					else
+					{
+						//set place of dir to copy over
+						rmdir_place = cp;
+						deleted_rec_len = dp->rec_len;
+
+						//get length of block after deletion
+						remaining_blk_size = buf + BLKSIZE - cp;
+
+						//find last entry
+						while (cp + dp->rec_len < buf + BLKSIZE)
+						{
+							cp += dp->rec_len;
+							dp = (DIR *)cp;
+
+							if(dp->rec_len <= 0)
+							{
+								printf("rec_len is less than or equal to zero\n");
+								break;
+							}
+							print_dir();
+							fgets(ibuf, sizeof(ibuf), stdin);
+						}
+						//add deleted rec_len to last entry
+						dp->rec_len += deleted_rec_len;
+						
+						dp = (DIR *)rmdir_place;
+
+						//move all following directories back
+						memcpy(rmdir_place, rmdir_place + dp->rec_len, remaining_blk_size);
+						break;
+					}
+				}
+			}
+		}
+		put_block(dev, pmip->inode.i_block[i], buf);
+
+   }
+    ip = &pmip->inode;
+	print_inode_contents();
+	
 }
 
 void ls(char* pathname)
@@ -48,7 +139,6 @@ void ls(char* pathname)
 	}
 
 	ip = &mip->inode;
-	print_inode();
 
 	printf("printing directory...\n");
 	int i = 0;
@@ -58,7 +148,7 @@ void ls(char* pathname)
 		{
 			get_block(dev, ip->i_block[i], buf);
 			
-
+			cp = buf;
 		    while (cp < buf + BLKSIZE)
 			{
 		   		dp = (DIR *)cp;
@@ -75,11 +165,13 @@ void ls(char* pathname)
 			
 		}
 	}
+	iput(mip);
 }
 
 
 void cd(char* pathname)
 {
+	MINODE* mip = NULL;
 	int ino;
 	if(pathname == NULL || strcmp(pathname, "/") == 0 || 
 		pathname[0] == '\n')
@@ -91,9 +183,21 @@ void cd(char* pathname)
 		ino = getino(&dev, pathname);
 
 		if(ino != 0)
-			running->cwd = iget(dev, ino);
-		else
+		{
+			mip = iget(dev, ino);
+			
+			if(S_ISDIR(mip->inode.i_mode))
+			{
+				running->cwd = mip;
+			}
+			else
+			{
+				printf("File is not directory\n");
+			}
+		}else
+		{
 			printf("Directory not found\n");
+		}
 	}
 }
 
@@ -105,6 +209,11 @@ int rmdir_fs(char* pathname)
 	int num_entries;
 	int pino;
 	int ino = getino(&dev, pathname);
+	if(ino == 0)
+	{
+		printf("File not found\n");
+		return;
+	}
 
 	char basename[64];
 	char** names = tokenize(pathname);
@@ -113,9 +222,13 @@ int rmdir_fs(char* pathname)
 	MINODE* mip = iget(dev, ino);
 
 	//verify inode is a dir
-	if(mip->inode.i_mode != 2)
+	if(!S_ISDIR(mip->inode.i_mode))
 	{
+		
 		printf("Invalid path\n");
+		ip = &pmip->inode;
+		print_inode();
+		print_inode_contents();
 		return 0;
 	}
 
@@ -137,19 +250,20 @@ int rmdir_fs(char* pathname)
 	}
 
 	//get parents ino and inode
-	findino(mip, &ino, &pino); //get parent from .. entry in INODE.i_block[0]
+	pino = findino(mip); 
+
+	printf("pino: %d\n", pino);
+//get parent from .. entry in INODE.i_block[0]	
 	pmip = iget(mip->dev, pino);
 
 	 //find name from parent DIR
 	findmyname(pmip, ino, basename);
 
-	//remove name from parent directory
-		
-
+	//remove name from parent directory	
 	rm_child(pmip, basename);
 
 	//deallocate its data blocks and inode
-	fs_truncate(pmip);
+	fs_truncate(mip);
 	
 	//deallocate INODE
 	idealloc(mip->dev, mip->ino);

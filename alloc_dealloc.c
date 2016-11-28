@@ -160,28 +160,28 @@ u32 balloc(int dev)
 	}
 }
 
-/*
+
 int bdealloc(int dev, int bit)
 {
   // I DID IT... maybe...
-	int i;  
-  char buf[BLKSIZE];
+  int i;  
+  char sbuf[BLKSIZE];
 
-  if (ino > nblocks)
+  if (bit > nblocks)
   {
-    printf("inumber %d out of range\n", ino);
-    return;
+    printf("bnumber %d out of range\n", bit);
+    return -1;
   }
 
   // get block bitmap inode
-  get_block(dev, imap, buf);
-  clr_bit(buf, ino - 1);
+  get_block(dev, bmap, sbuf);
+  clr_bit(sbuf, bit - 1);
 
   // write buf back
-  put_block(dev, bmap, buf);
+  put_block(dev, bmap, sbuf);
 
   // update free inode count in SUPER and GD
   incFreeBlocks(dev);
 }
-*/
+
 

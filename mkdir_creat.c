@@ -1,10 +1,12 @@
 
-int add_dir_entry(int ino, char* basename, int rec_len)
+
+
+int add_dir_entry(int ino, char* basename, int rec_len, int file_type)
 {
 	strcpy(dp->name, basename);
 	dp->name_len = strlen(basename);
 	dp->rec_len = rec_len;
-	dp->file_type = 2;
+	dp->file_type = file_type;
 	dp->inode = ino;
 	print_dir();
 }
@@ -26,14 +28,14 @@ int get_last_entry(char* cp)
    }
 }
 
-void enter_child(MINODE* pmip, int ino, char* basename)
+void enter_child(MINODE* pmip, int ino, char* basename, int file_type)
 {
 	int i, need_len = 0, remain = 0, ideal_len = 0;
 	char *cp;
 	char exBuf[10];
 
 
-	need_len = 4*((8+strlen(basename)+3)/4);
+	need_len = 4*((8+strlen(basename)+4)/4);
 	
 	printf("entering child...\n");
    for (i=0; i<12; i++)
@@ -55,7 +57,7 @@ void enter_child(MINODE* pmip, int ino, char* basename)
 			printf("*******\nentry\n*******\n");
 			printf("*******\ninsert\n*******\n");
 			printf("*******\n********\n*******\n");
-			add_dir_entry(ino, basename, BLKSIZE);
+			add_dir_entry(ino, basename, BLKSIZE, file_type);
 			return;
 		}
 		
@@ -64,14 +66,14 @@ void enter_child(MINODE* pmip, int ino, char* basename)
 
 		get_last_entry(cp);
 
-		ideal_len = 4*((8 + dp->name_len + 3)/4);
+		ideal_len = 4*((8 + dp->name_len + 4)/4);
 		remain = dp->rec_len - ideal_len;
 
 		if(remain >= need_len)
 		{
 			dp->rec_len = ideal_len;
 			dp = (DIR *)((char *)dp + dp->rec_len);
-			add_dir_entry(ino, basename, remain);
+			add_dir_entry(ino, basename, remain, file_type);
 		}
 		else
 		{
@@ -89,7 +91,7 @@ void enter_child(MINODE* pmip, int ino, char* basename)
 }
 
 
-int kmkdir(MINODE* pmip, char* basename)
+void kmkdir(MINODE* pmip, char* basename)
 {
 	char* cp;
 	int i, ino = ialloc(dev);
@@ -97,13 +99,12 @@ int kmkdir(MINODE* pmip, char* basename)
 	MINODE* mip = iget(dev, ino);
 	
 
-	printf("parent directory block #%d allocated\n", blk);
 	mip->inode.i_block[0] = blk;
 	for(i = 1; i < 12; i++)
 	{
 		mip->inode.i_block[i] = 0;
 	}
-
+	mip->inode.i_mode = 0x41A4;
 	mip->dirty = 1;
 	iput(mip);
 
@@ -137,13 +138,11 @@ int kmkdir(MINODE* pmip, char* basename)
 
 
 
-	enter_child(pmip, ino, basename);
+	enter_child(pmip, ino, basename, 2);
 	
 
     //which enters (ino, basename) as a DIR entry to the parent INODE
 
-
-	return blk;
 }
 
 void mkdir_fs(char* pathname)
@@ -186,7 +185,82 @@ void mkdir_fs(char* pathname)
 		return;
 	}
 
-	test_block = kmkdir(pmip, basename);
+	kmkdir(pmip, basename);
+
+	pmip->inode.i_links_count++;
+	pmip->dirty = 1;
+	iput(pmip);
+
+
+}
+
+
+void kcreat(MINODE* pmip, char* basename)
+{
+	char* cp;
+	int i, ino = ialloc(dev);
+	//int blk = balloc(dev);
+	MINODE* mip = iget(dev, ino);
+	
+	//do I need to mark it dirty and put it
+
+	mip->dirty = 1;
+	iput(mip);
+
+	//make data block 0 of inode to contain . and .. entries
+	ip = &mip->inode;
+
+	//test if done correctly
+	ip->i_mode = 0x81A4;
+
+	enter_child(pmip, ino, basename, 1);
+	
+
+    //which enters (ino, basename) as a DIR entry to the parent INODE
+
+}
+
+void creat_fs(char* pathname)
+{
+	MINODE* pmip = NULL;
+	char basename[64];
+	char** names = tokenize(pathname);
+	int i = 0, myino, pino;
+
+	int test_block;
+
+	read_path(basename, names);
+
+	if(basename == NULL || basename[0] == '\n')
+		return;
+
+	if(names[0] != NULL)
+	{
+		printf("names[0]: %s\n", names[0]);
+		pino = getino(&dev, *names);
+	}
+	else
+	{
+		pino = running->cwd->ino;
+	}
+	pmip = iget(dev, pino);
+	
+	if(!S_ISDIR(pmip->inode.i_mode))
+	{
+		printf("Invalid path with i_mode #%d\n", pmip->inode.i_mode);
+		ip = &pmip->inode;
+		print_inode();
+		print_inode_contents();
+		return;
+	}
+	
+	if(search_inode(&pmip->inode, basename) != 0)
+	{
+		printf("File already exists\n");
+		return;
+	}
+
+	kcreat(pmip, basename);
 
 	pmip->inode.i_links_count++;
 	pmip->dirty = 1;
@@ -199,42 +273,5 @@ void mkdir_fs(char* pathname)
 
     dp = dp + dp->rec_len;
 	print_dir();
-}
-
-
-
-void creat_fs(char* pathname)
-{
-	char filename[64];
-	char** names = tokenize(pathname);
-	int i = 0, ino;
-
-	while(names[i + 1] != NULL)
-	{
-		i++;
-	}
-
-	if(names[i] == NULL)
-	{
-		printf("Invalid creat argument\n");
-		return;
-	}
-
-	strcpy(filename, names[i]);	
-	printf("filename: %s\n", filename);
-	names[i] = NULL;
-
-	ino = getino(&dev, *names);
-
-	
-	//	similar to mdkir except:
-	//	1. inode.i_mode field is set to reg file type, permission bits set to 0644 for rw-r--r--, and
-
-
-	//	2. no data block is allocated for it so the file size is 0
-
-
-	//	3. Do not increment parent inodes link count
-	
 }
 
