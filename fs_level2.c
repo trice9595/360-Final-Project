@@ -1,4 +1,3 @@
-#include "util.c"
 #include "fs_level1.c"
 
 int fs_open(char* file, char* flags)
