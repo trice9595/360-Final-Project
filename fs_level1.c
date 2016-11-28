@@ -71,7 +71,7 @@ int rm_child(MINODE* pmip, char* name)
 					else
 					{
 						//set place of dir to copy over
-						rmdir_place = cp;
+						rmdir_place = (int)cp;
 						deleted_rec_len = dp->rec_len;
 
 						//get length of block after deletion
@@ -117,13 +117,11 @@ void ls(char* pathname)
 	int ino;
 	char* cp;
 	int i_size = 0;
->>>>>>> a378548c1be455b8df4e53bc327a07129d6962fd
-	
+
  	dev = running->cwd->dev;
 
 	MINODE* mip = running->cwd;
 	
-<<<<<<< HEAD
 	
 	if(pathname[0] != '/' && pathname[0] != '\n' )
 	{
@@ -138,14 +136,6 @@ void ls(char* pathname)
 		
 		mip = iget(dev, ino);
 		
-	if(pathname[0] != '/' && pathname[0] != '\n' )
-	{
-	
-		ino = getino(&dev, pathname);
-		printf("got ino: %d\n", ino);
-		
-		mip = iget(dev, ino);
-		printf("got minode!\n");
 	}
 
 	ip = &mip->inode;
@@ -223,7 +213,7 @@ int rmdir_fs(char* pathname)
 	if(ino == 0)
 	{
 		printf("File not found\n");
-		return;
+		return 0;
 	}
 
 	char basename[64];
@@ -290,93 +280,109 @@ int rmdir_fs(char* pathname)
 void fs_link(char* oldfile, char* newfile)
 {
 
-	
-	int fd = open(oldfile, O_RDONLY); 
+	MINODE *omip = NULL, *pmip = NULL;
+	int oino = 0, nino = 0, pino = 0;
 
-	int oino = getino(fd, oldfile);
-	
-	int xd = open (newfile, O_CREAT);
-
-	int nino = getino(xd, newfile);
-
-	int odev = search_inode(oino ,oldfile);
-	int ndev = search_inode(nino ,newfile);
 
 	//1. verify oldfile and is not DIR
-	oino = getino(&odev, oldfile);
-	MINODE* omip = iget(odev, oldfile);
+	oino = getino(&dev, oldfile);
+	if(oino == 0)
+	{
+		printf("File does not exist\n");
+		return;
+	}
+	
+	omip = iget(dev, oino);
+	if(S_ISDIR(omip->inode.i_mode))
+	{
+		printf("File is directory\n");	
+		return;
+	}
 
 	//2. new file must not exist yet
-	nino = getino(&ndev, newfile);
+	nino = getino(&dev, newfile);
 	if(nino != 0)
 		return;
 
 	//3. creat entry in new_parent DIR with same ino
 	//pmip -> minode of dirname(newfile)
-	MINODE* pmip = iget(ndev, newfile);
-	enter_name(pmip, omip->ino, basename(newfile));
+	pino = getino(&dev, newfile);
+	pmip = iget(dev, pino);
+	enter_child(pmip, omip->ino, basename(newfile), 7);
 
 	omip->inode.i_links_count++;
 	omip->dirty = 1;
 	iput(omip);
-	iput(omip);	
+	iput(pmip);
+
 }
 
 void fs_unlink(char* filename)
 {
-	/*
-	1. get filename's minode:
-	int ino = getino(&dev, filename)
-	MINODE* mip = iget(dev, ino)
+	
+	int ino = 0, pino = 0;
+	MINODE* mip = NULL, *pmip = NULL;
 
-	2. remove basename from parent DIR
-	rm_child(pmip, mip->ino, basename)
+	//1. get filename's minode:
+	ino = getino(&dev, filename);
+	mip = iget(dev, ino);
+
+	//2. remove basename from parent DIR
+	pino = findino(mip);
+	pmip = iget(dev, pino);
+
+	rm_child(pmip, basename(filename));
 	pmip->dirty = 1;
 	iput(pmip);
 
-	3.decrement inode's link count
+	//3.decrement inode's link count
 	mip->inode.i_links_count--;
-	if(mip->inode.links_count > 0)
-		mip->dirty = 1; iput(mip);
+	if(mip->inode.i_links_count > 0)
+	{
+		mip->dirty = 1;
+		iput(mip);
+	}
 
-	if(!SLINK file)  or filetype 7 //assume:SLINK file has not data block
-		truncate(mip);
-	deallocate(inode);
+     //assume:SLINK file has not data block
+	if(S_ISLNK(!mip->inode.i_mode))
+		fs_truncate(mip);
+
+	idealloc(dev, mip->ino);
 	iput(mip);
 
-	*/
+	
 }
 
 void fs_symlink(char* oldfile, char* newfile)
 {
-	int fd = open(oldfile, O_RDONLY); 
+	/*int oino = 0, nino = 0;
 
-	int oino = getino(fd, oldfile);
-	
-	int xd = open (newfile, O_CREAT);
 
-	int nino = getino(xd, newfile);
-
-	int odev = search_inode(oino ,oldfile);
-	int ndev = search_inode(nino ,newfile);	
-
+	MINODE* omip = NULL, *nmip = NULL;
 	//1. check: old_file must exist and new_file not yet exist
-	oino = getino(&odev, oldfile);
-	MINODE* omip = iget(odev, oldfile);
-	nino = getino(&ndev, newfile);
+	oino = getino(&dev, oldfile);
+	if(oino == 0)
+		return;
+
+	omip = iget(dev, oino);
+
+	nino = getino(&dev, newfile);
 	if(nino != 0)
 		return;
 
-	MINODE* nmip = iget(ndev, newfile);
+	nmip = iget(dev, newfile);
 
 	//2. Change newfile to slink type  or filetype 7
+	nmip->inode.i_mode = 0x81A4;
 	//3. assume length of oldfile name <= 60 chars
 	//	store oldfile name in newfiles inode.i_block[] area
 	//	mark new files minode dirty
+
 		iput(nmip);
 	//4. mark newfile's parent minode dirty
 	//	put(newfile's parent minode)
->>>>>>> a378548c1be455b8df4e53bc327a07129d6962fd
+
+	*/
 }
 
 

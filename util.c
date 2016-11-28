@@ -121,8 +121,7 @@ void print_inode()
 
 void print_dir()
 {
-	printf("dp address: %d\n", dp);
-	printf("current_name_len: %d\n", strlen(dp->name));
+
 	printf("dp->name: %s\n", dp->name);
 	printf("dp->file_type: %d\n", dp->file_type);
 	printf("dp->inode: %d\n", dp->inode);
