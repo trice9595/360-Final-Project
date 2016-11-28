@@ -149,7 +149,6 @@ void mkdir_fs(char* pathname)
 {
 	MINODE* pmip = NULL;
 	char* base = basename(pathname);
-	printf("|%c|", base[strlen(base)]);
 	char* dir = dirname(pathname);
 	int i = 0, myino, pino;
 
@@ -227,7 +226,7 @@ void creat_fs(char* pathname)
 
 	base[strlen(base) - 1] = '\0';
 	int i = 0, myino, pino;
-	printf("base: |%s|\n", base);
+
 
 	if(strcmp(base, ".") == 0 || 
 		strcmp(base, "/") == 0)
@@ -236,16 +235,6 @@ void creat_fs(char* pathname)
 	printf("getting pino with dir: %s\n", dir);
 	pino = getino(&dev, dir);
 	printf("got pino #%d\n", pino);
-	/*if(names[0] != NULL)
-	{
-		printf("names[0]: %s\n", names[0]);
-		pino = getino(&dev, *names);
-	}
-	else
-	{
-		pino = running->cwd->ino;
-	}
-	*/
 	
 	pmip = iget(dev, pino);
 	

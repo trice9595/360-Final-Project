@@ -230,11 +230,7 @@ int rmdir_fs(char* pathname)
 
 	if(!S_ISDIR(mip->inode.i_mode))
 	{
-		
 		printf("Invalid path\n");
-		ip = &pmip->inode;
-		print_inode();
-		print_inode_contents();
 	}
 
 
@@ -369,8 +365,6 @@ void fs_unlink(char* filename)
 
 	pmip = iget(dev, pino);
 	printf("pino: %d\n", pino);
-	ip = &pmip->inode;
-	print_inode_contents();	
 
 	rm_child(pmip, basename(filename));
 	pmip->dirty = 1;
@@ -394,16 +388,19 @@ void fs_unlink(char* filename)
 	
 }
 
+//create generic file creation process that symlink, link, creat, and mkdir all call
 void fs_symlink(char* oldfile, char* newfile)
 {
-	/*int oino = 0, nino = 0;
+	int oino = 0, nino = 0, pino;
+	char* dir = dirname(newfile);
 
 
-	MINODE* omip = NULL, *nmip = NULL;
+	MINODE* omip = NULL, *nmip = NULL, *pmip = NULL;
 	//1. check: old_file must exist and new_file not yet exist
 	oino = getino(&dev, oldfile);
 	if(oino == 0)
 		return;
+
 
 	omip = iget(dev, oino);
 
@@ -411,29 +408,54 @@ void fs_symlink(char* oldfile, char* newfile)
 	if(nino != 0)
 		return;
 
-	nmip = iget(dev, newfile);
+	nmip = iget(dev, nino);
 
-	//2. Change newfile to slink type  or filetype 7
+	//2. Change newfile to slink type
 	nmip->inode.i_mode = 0x81A4;
+
 	//3. assume length of oldfile name <= 60 chars
 	//	store oldfile name in newfiles inode.i_block[] area
 	//	mark new files minode dirty
+	get_block(dev, nmip->inode.i_block[0], buf);
 
-		iput(nmip);
+	memcpy(buf, oldfile, strlen(oldfile));
+
+	put_block(dev, nmip->inode.i_block[0], buf);
+
+	nmip->dirty = 1;
+
+	iput(nmip);
 	//4. mark newfile's parent minode dirty
 	//	put(newfile's parent minode)
+	
+	if(strcmp(dir, ".") != 0)
+	{
+		pino = getino(&dev, dir);
+	}
+	else
+	{
+		pino = running->cwd->ino;
+	}
 
-	*/
+	pmip = iget(dev, pino);
+	pmip->dirty = 1;
+	
+	iput(pmip);
 }
 
 
-void fs_readlink()
+int fs_readlink(char* pathname, char buffer[])
 {
-	/*
-	1. get file's inode into memory, verify it's a slink file or filetype 7
-	2. copy target filename in inode.i_block into a buffer
-	3. return strlen((char *)mip->inode.i_block)
-	*/
+	
+	//1. get file's inode into memory, verify it's a slink file
+	int ino = getino(&dev, pathname);
+	MINODE* mip = iget(dev, ino);
+	//2. copy target filename in inode.i_block into a buffer
+	get_block(dev, mip->inode.i_block[0], buffer);
+	printf("target filename: %s\n", buffer);
+	//3. return strlen((char *)mip->inode.i_block)
+	return strlen((char *)buffer);
+	
 }
  
 

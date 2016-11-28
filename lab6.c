@@ -38,7 +38,7 @@ void init()
 
 void mount_root()
 {		
-	dev = open("diskimage", O_RDWR);
+	dev = open("mydisk", O_RDWR);
 	root = iget(dev, 2);
 
 	//set processes current working directory to root minode
@@ -90,12 +90,12 @@ int main(int argc, char* argv[])
 	printf("\n");
 	ls(path);
 
-	printf("Enter string for link pathname: ");
+	printf("Enter string for symlink pathname: ");
 	fgets(path, sizeof(path), stdin);
 	printf("\n");
 	fgets(path2, sizeof(path2), stdin);
 	printf("path: %s, path2: %s\n", path, path2);
-	fs_link(path, path2);
+	fs_symlink(path, path2);
 
   	printf("Enter string for ls pathname: ");
 	fgets(path, sizeof(path), stdin);
@@ -104,10 +104,10 @@ int main(int argc, char* argv[])
 
 
 
-	printf("Enter string for unlink pathname: ");
+	printf("Enter string for readlink pathname: ");
 	fgets(path, sizeof(path), stdin);
 	printf("\n");
-	fs_unlink(path);
+	fs_readlink(path, buf);
 
 
   	printf("Enter string for ls pathname: ");
