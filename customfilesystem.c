@@ -29,11 +29,10 @@ char buf2[BLKSIZE] = { 0 };
 #include <string.h>
 #include "fs_level1.c"
 #include "fs_level2.c"
-
 int main(int argc, char *argv[], char *env[])
 {
 	int err = 0, i = 0;
-	char* input;
+	char input[256];
 	char* splitInput[256];
 
 	err = mount_root();
@@ -58,9 +57,12 @@ int main(int argc, char *argv[], char *env[])
 			i++;
 		}
 
-		while (splitInput[i] = strtok(NULL, " "))
-		i = 0;
-	
+		i = 2;
+
+		splitInput[0] = strtok(input, " ");
+
+		splitInput[1] = strtok(NULL, " ");
+
 		while (splitInput[i] = strtok(NULL, " "))
 		{
 			i++;
@@ -68,15 +70,22 @@ int main(int argc, char *argv[], char *env[])
 
 		if (!strcmp(splitInput[0], "ls"))
 		{
-			ls(splitInput[1]);
+			if (splitInput[1])
+			{
+				ls(splitInput[1]);
+			}
+			else
+			{
+				ls("\n");
+			}
 		}
-		else if (splitinput[1] && !strcmp(splitInput[0], "cd"))
+		else if (splitInput[1] && !strcmp(splitInput[0], "cd"))
 		{
 			cd(splitInput[1]);
 		}
 		else if (!strcmp(splitInput[0], "pwd"))
 		{
-			pwd();
+			//pwd();
 		}
 		else if (splitInput[1] && !strcmp(splitInput[0], "mkdir"))
 		{
@@ -86,7 +95,7 @@ int main(int argc, char *argv[], char *env[])
 		{
 			rmdir_fs(splitInput[1]);
 		}
-		else if (splitInput1 && !strcmp(splitInput[0], "creat"))
+		else if (splitInput[1] && !strcmp(splitInput[0], "creat"))
 		{
 			creat_fs(splitInput[1]);
 		}
@@ -94,9 +103,9 @@ int main(int argc, char *argv[], char *env[])
 		{
 			fs_link(splitInput[1], splitInput[2]);
 		}
-		else if (splitInput[1] && splitInput[2] && !strcmp(splitInput[0], "unlink"))
+		else if (splitInput[1] && !strcmp(splitInput[0], "unlink"))
 		{
-			fs_unlink(splitInput[1], splitInput[2]);
+			fs_unlink(splitInput[1]);
 		}
 		else if (splitInput[1] && splitInput[2] && !strcmp(splitInput[0], "symlink"))
 		{
@@ -106,9 +115,10 @@ int main(int argc, char *argv[], char *env[])
 		{
 			fs_readlink();
 		}
-		else if (!strcmp(splitInput[0], "open") && splitInput[1])
+		else if (!strcmp(splitInput[0], "open") && splitInput[1]
+&& splitInput[2])
 		{
-			fs_open(splitInput[1]);
+			fs_open(splitInput[1], splitInput[2]);
 		}
 		else if (!strcmp(splitInput[0], "close") && splitInput[1])
 		{
@@ -118,11 +128,33 @@ int main(int argc, char *argv[], char *env[])
 		{
 			fs_lseek(splitInput[1], splitInput[2]);
 		}
+		else if (!strcmp(splitInput[0], "exit"))
+		{
+			break;
+		}
 		else
 		{
 			printf ("invalid command\n");
 		}
 	}
+}
+
+int mount_root()
+{
+	dev = open("diskimage", O_RDONLY);
+	root = iget(dev, 2);
+
+	proc[0].cwd = iget(root->dev, 2);
+	proc[1].cwd = iget(root->dev, 2);	
+
+	running = &proc[0];
+
+	if (!dev && !root && !running)
+	{
+		return 0;
+	}
+
+	return 1;
 }
 
 
@@ -145,16 +177,3 @@ void init()
 
 }
 
-void mount_root()
-{		
-	dev = open("mydisk", O_RDWR);
-	root = iget(dev, 2);
-
-	//set processes current working directory to root minode
-	proc[0].cwd = iget(root->dev, 2);
-	proc[1].cwd = iget(root->dev, 2);	
-
-	//set running process to first process
-	running = &proc[0];
-
-}
