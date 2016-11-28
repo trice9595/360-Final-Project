@@ -51,7 +51,6 @@ void mount_root()
 }
 
 
-
 int main(int argc, char* argv[])
 {
 	ip = malloc(sizeof(INODE));
@@ -61,54 +60,63 @@ int main(int argc, char* argv[])
 
 	init();
     mount_root();
-	
+
+
   	printf("Enter string for ls pathname: ");
 	fgets(path, sizeof(path), stdin);
 	printf("\n");
 	ls(path);
+
 
 	printf("Enter string for cd pathname: ");
 	fgets(path, sizeof(path), stdin);
 	printf("\n");
 	cd(path);
 
+
   	printf("Enter string for ls pathname: ");
 	fgets(path, sizeof(path), stdin);
 	printf("\n");
 	ls(path);
+
+
 
 	printf("Enter string for mkdir pathname: ");
 	fgets(path, sizeof(path), stdin);
 	printf("\n");
-
 	mkdir_fs(path);
+
+
 
   	printf("Enter string for ls pathname: ");
 	fgets(path, sizeof(path), stdin);
 	printf("\n");
 	ls(path);
+
+
 
 	printf("Enter string for cd pathname: ");
 	fgets(path, sizeof(path), stdin);
 	printf("\n");
 	cd(path);
 
+
   	printf("Enter string for ls pathname: ");
 	fgets(path, sizeof(path), stdin);
 	printf("\n");
 	ls(path);
+
 
 	printf("Enter string for mkdir pathname: ");
 	fgets(path, sizeof(path), stdin);
 	printf("\n");
-
 	mkdir_fs(path);
+
 
   	printf("Enter string for ls pathname: ");
 	fgets(path, sizeof(path), stdin);
 	printf("\n");
 	ls(path);
-
 
 
 	printf("Enter string for stat pathname: ");

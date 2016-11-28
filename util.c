@@ -90,6 +90,9 @@ void calculate_mount_info(int fd)
 {
 	read_group_desc_block(fd);
 	inodes_per_block = read_super_block(fd);
+
+	printf("inodes_per_block: %d\n", inodes_per_block);
+	printf("inodes_begin_block: %d\n", inodes_begin_block);
 }
 
 
@@ -320,7 +323,9 @@ void iput(MINODE *mip)
 	else
 	{
 		printf("DID NOT IPUT\n");
-		printf("mip->refCount: %d, mip->dirty: %d\n", mip->refCount, mip->dirty);
+		printf("mip->refCount: %d, mip->dirty: %d, mip->ino\n", mip->refCount, mip->dirty, mip->ino);
+		ip = &mip->inode;
+		print_inode_contents();
 	}
 }
 
