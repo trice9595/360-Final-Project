@@ -112,7 +112,6 @@ int kmkdir(MINODE* pmip, char* basename)
 
 	get_block(dev, ip->i_block[0], buf);
 
-	printf("buffer starts at address %d\n", buf);
 
 	cp = buf;
 
@@ -170,7 +169,6 @@ void mkdir_fs(char* pathname)
 	{
 		pino = running->cwd->ino;
 	}
-	printf("dev: %d, pino: %d\n", dev, pino);
 	pmip = iget(dev, pino);
 	
 	if(!S_ISDIR(pmip->inode.i_mode))
@@ -196,7 +194,6 @@ void mkdir_fs(char* pathname)
 
 	get_block(dev, test_block, buf);
 
-	printf("\nblock: %d\n\n", test_block);
 	dp = (DIR *)buf;
 	print_dir();
 
