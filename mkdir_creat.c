@@ -153,7 +153,10 @@ MINODE* get_parent_minode(char* pathname)
 	char* dir = dirname(pathname);
 	int pino = 0;
 
-	base[strlen(base) - 1] = '\0';
+	if(base[strlen(base) - 1] == '\n')
+	{
+		base[strlen(base) - 1] = '\0';
+	}
 
 	if(base == NULL || strcmp(base, ".") == 0)
 		return NULL;

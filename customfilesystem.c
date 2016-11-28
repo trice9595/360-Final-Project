@@ -22,13 +22,21 @@ int inodes_begin_block = 0, inodes_per_block = 0;
 char buf[BLKSIZE] = { 0 };
 char buf2[BLKSIZE] = { 0 };
 
-//custom file system
-//John Howley and Tim Rice
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include "fs_level1.c"
-#include "fs_level2.c"
+void split_command(char *pathname, char **names)
+{
+	int i = 0;
+	//char** names = malloc(64*sizeof(char *));	
+	const char* delim = " ";
+	
+	names[i] = strtok(pathname, delim);
+	while(names[i] != NULL)
+	{
+		i++;
+		names[i] = strtok(NULL, delim);
+	}
+	names[i - 1] = strtok(names[i - 1], "\n");
+}
+
 int main(int argc, char *argv[], char *env[])
 {
 	int err = 0, i = 0;
@@ -48,6 +56,7 @@ int main(int argc, char *argv[], char *env[])
 	{
 		printf ("Please type a command: ");
 		scanf ("%s", input);
+		printf("this is the input: %s\n", input);
 		printf ("\n");
 
 		while(i < 256)
@@ -57,14 +66,24 @@ int main(int argc, char *argv[], char *env[])
 			i++;
 		}
 
-		i = 2;
-
+		i = 0;
+		/*
 		splitInput[0] = strtok(input, " ");
+		printf("splitInput[0]: %s\n", splitInput[0]);
 
 		splitInput[1] = strtok(NULL, " ");
+		printf("splitInput[1]: %s\n", splitInput[1]);
 
 		while (splitInput[i] = strtok(NULL, " "))
 		{
+			i++;
+			printf("splitInput[i]: %s\n", splitInput[i]);
+		}*/
+		split_command(input, splitInput);
+
+		while (splitInput[i])
+		{
+			printf("splitInput[%d]: %s\n", i, splitInput[i]);
 			i++;
 		}
 
@@ -113,7 +132,7 @@ int main(int argc, char *argv[], char *env[])
 		}
 		else if (!strcmp(splitInput[0], "readlink"))
 		{
-			fs_readlink();
+			//fs_readlink();
 		}
 		else if (!strcmp(splitInput[0], "open") && splitInput[1]
 && splitInput[2])
