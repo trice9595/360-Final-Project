@@ -190,36 +190,7 @@ MINODE* get_parent_minode(char* pathname)
 void mkdir_fs(char* pathname)
 {
 	MINODE* pmip = NULL;
-/*
 
-	base[strlen(base) - 1] = '\0';
-
-	if(base == NULL || strcmp(base, ".") == 0)
-		return;
-
-	if(strcmp(dir, ".") != 0)
-	{
-		printf("dir: %s\n", dir);
-		pino = getino(&dev, dir);
-	}
-	else
-	{
-		pino = running->cwd->ino;
-	}
-	pmip = iget(dev, pino);
-	
-	if(!S_ISDIR(pmip->inode.i_mode))
-	{
-		printf("Invalid path with i_mode #%d\n", pmip->inode.i_mode);
-		return;
-	}
-	
-	if(search_inode(&pmip->inode, base) != 0)
-	{
-		printf("Directory already exists\n");
-		return;
-	}
-*/
 	pmip = get_parent_minode(pathname);
 	kmkdir(pmip, basename(pathname));
 
@@ -240,13 +211,14 @@ void kcreat(MINODE* pmip, char* basename)
 	//do I need to mark it dirty and put it
 
 	mip->dirty = 1;
-	iput(mip);
 
 	//make data block 0 of inode to contain . and .. entries
-	ip = &mip->inode;
+
 
 	//test if done correctly
-	ip->i_mode = 0x81A4;
+	mip->inode.i_mode = 0x81A4;
+	
+	iput(mip);
 
 	enter_child(pmip, ino, basename, 1);
 	
@@ -258,35 +230,7 @@ void kcreat(MINODE* pmip, char* basename)
 void creat_fs(char* pathname)
 {
 	MINODE* pmip = NULL;
-	/*char* base = basename(pathname);
-	char* dir = dirname(pathname);
 
-	base[strlen(base) - 1] = '\0';
-	int i = 0, myino, pino;
-
-
-	if(strcmp(base, ".") == 0 || 
-		strcmp(base, "/") == 0)
-		return;
-
-	printf("getting pino with dir: %s\n", dir);
-	pino = getino(&dev, dir);
-	printf("got pino #%d\n", pino);
-	
-	pmip = iget(dev, pino);
-	
-	if(!S_ISDIR(pmip->inode.i_mode))
-	{
-		printf("Invalid path with i_mode #%d\n", pmip->inode.i_mode);
-		ip = &pmip->inode;
-		return;
-	}
-	
-	if(search_inode(&pmip->inode, base) != 0)
-	{
-		printf("File already exists\n");
-		return;
-	}*/
 	pmip = get_parent_minode(pathname);
 
 	kcreat(pmip, basename(pathname));

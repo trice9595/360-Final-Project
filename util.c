@@ -164,8 +164,7 @@ int get_num_entries(INODE* inode)
    int i, num_entries = 0; 
    char *cp;
 
-	ip = inode;	
-	printf("getting num entries\n");
+	ip = inode;
    for (i=0; i<12; i++){  // ASSUME DIRs only has 12 direct blocks
        if (ip->i_block[i] == 0)
           return num_entries;
@@ -175,7 +174,6 @@ int get_num_entries(INODE* inode)
        cp = sbuf;
        while (cp < sbuf + BLKSIZE){
           dp = (DIR *)cp;
-			print_dir();
           cp += dp->rec_len;
 		  num_entries++;
        }
@@ -363,17 +361,13 @@ int findino(MINODE *mip)
 
 	char* cp = buf;
 	ip = &mip->inode;
-	print_inode();
 
 	get_block(dev, ip->i_block[0], buf);
 	dp = (DIR *) cp;
-	print_dir();
 
     cp += dp->rec_len;
     dp = (DIR *) cp;
-	print_dir();
 
-	printf("dp->name: %s\n", dp->name);
 	if(strcmp(dp->name, "..") == 0)
 		return dp->inode;
 

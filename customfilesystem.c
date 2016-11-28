@@ -91,7 +91,7 @@ int main(int argc, char *argv[], char *env[])
 			}
 			else
 			{
-				ls("\n");
+				ls(".");
 			}
 		}
 		else if (splitInput[1] && !strcmp(splitInput[0], "cd"))
@@ -134,9 +134,11 @@ int main(int argc, char *argv[], char *env[])
 && splitInput[2])
 		{
 			if (of.name == NULL)
-			{			
-				of.fd = fs_open(splitInput[1], splitInput[2]);
+			{	
+				printf("");
+				of.fd = fs_open(splitInput[1], atoi(splitInput[2]));
 				of.name = splitInput[1];
+				printf("file descriptor: %d\n", of.fd);
 			}
 			else
 			{
@@ -148,6 +150,13 @@ int main(int argc, char *argv[], char *env[])
 			fs_close(of.fd);
 
 			of.name = NULL;
+		}
+				else if (!strcmp(splitInput[0], "write") && splitInput[1]
+&& splitInput[2])
+		{
+			printf("text: %s\n", splitInput[2]);
+			write_file(splitInput[1], splitInput[2], strlen(splitInput[2]));
+
 		}
 		else if (!strcmp(splitInput[0], "lseek") && splitInput[1] && splitInput[2])
 		{
@@ -171,24 +180,19 @@ int main(int argc, char *argv[], char *env[])
 	}
 }
 
-int mount_root()
-{
-	dev = open("diskimage", O_RDONLY);
+void mount_root()
+{		
+	dev = open("diskimage", O_RDWR);
 	root = iget(dev, 2);
 
+	//set processes current working directory to root minode
 	proc[0].cwd = iget(root->dev, 2);
 	proc[1].cwd = iget(root->dev, 2);	
 
+	//set running process to first process
 	running = &proc[0];
 
-	if (!dev && !root && !running)
-	{
-		return 0;
-	}
-
-	return 1;
 }
-
 
 void init()
 {

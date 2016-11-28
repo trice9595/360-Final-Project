@@ -66,6 +66,7 @@ int rm_child(MINODE* pmip, char* name)
 					//last entry in block
 					if(cp + dp->rec_len >= buf + BLKSIZE)
 					{
+						printf("last entry\n");
 						last_rec_len = dp->rec_len;
 						cp -= prev_rec_len;
 						dp = (DIR *)cp;
@@ -75,6 +76,8 @@ int rm_child(MINODE* pmip, char* name)
 					//middle of block somewhere
 					else
 					{
+						
+						printf("middle entry\n");
 						//set place of dir to copy over
 						rmdir_place = cp;
 						deleted_rec_len = dp->rec_len;
@@ -94,12 +97,13 @@ int rm_child(MINODE* pmip, char* name)
 								break;
 							}
 							
-							fgets(ibuf, sizeof(ibuf), stdin);
+							print_dir();
 						}
 						//add deleted rec_len to last entry
 						dp->rec_len += deleted_rec_len;
-						
+						printf("\nrmdir_place: %d, remaining_blk_size: %d\n", rmdir_place, remaining_blk_size);
 						dp = (DIR *)rmdir_place;
+						print_dir();
 
 						//move all following directories back
 						memcpy(rmdir_place, rmdir_place + dp->rec_len, remaining_blk_size);
@@ -111,8 +115,6 @@ int rm_child(MINODE* pmip, char* name)
 		put_block(dev, pmip->inode.i_block[i], buf);
 
    }
-    ip = &pmip->inode;
-	print_inode_contents();
 }
 
 
