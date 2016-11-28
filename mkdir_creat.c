@@ -145,12 +145,49 @@ void kmkdir(MINODE* pmip, char* basename)
 
 }
 
-void mkdir_fs(char* pathname)
+MINODE* get_parent_minode(char* pathname)
 {
+
 	MINODE* pmip = NULL;
 	char* base = basename(pathname);
 	char* dir = dirname(pathname);
-	int i = 0, myino, pino;
+	int pino = 0;
+
+	base[strlen(base) - 1] = '\0';
+
+	if(base == NULL || strcmp(base, ".") == 0)
+		return NULL;
+
+	if(strcmp(dir, ".") != 0)
+	{
+		printf("dir: %s\n", dir);
+		pino = getino(&dev, dir);
+	}
+	else
+	{
+		pino = running->cwd->ino;
+	}
+	pmip = iget(dev, pino);
+	
+	if(!S_ISDIR(pmip->inode.i_mode))
+	{
+		printf("Invalid path with i_mode #%d\n", pmip->inode.i_mode);
+		return NULL;
+	}
+	
+	if(search_inode(&pmip->inode, base) != 0)
+	{
+		printf("File already exists\n");
+		return NULL;
+	}
+
+	return pmip;
+}
+
+void mkdir_fs(char* pathname)
+{
+	MINODE* pmip = NULL;
+/*
 
 	base[strlen(base) - 1] = '\0';
 
@@ -171,9 +208,6 @@ void mkdir_fs(char* pathname)
 	if(!S_ISDIR(pmip->inode.i_mode))
 	{
 		printf("Invalid path with i_mode #%d\n", pmip->inode.i_mode);
-		ip = &pmip->inode;
-		print_inode();
-		print_inode_contents();
 		return;
 	}
 	
@@ -182,8 +216,9 @@ void mkdir_fs(char* pathname)
 		printf("Directory already exists\n");
 		return;
 	}
-
-	kmkdir(pmip, base);
+*/
+	pmip = get_parent_minode(pathname);
+	kmkdir(pmip, basename(pathname));
 
 	pmip->inode.i_links_count++;
 	pmip->dirty = 1;
@@ -197,7 +232,6 @@ void kcreat(MINODE* pmip, char* basename)
 {
 	char* cp;
 	int i, ino = ialloc(dev);
-	//int blk = balloc(dev);
 	MINODE* mip = iget(dev, ino);
 	
 	//do I need to mark it dirty and put it
@@ -221,7 +255,7 @@ void kcreat(MINODE* pmip, char* basename)
 void creat_fs(char* pathname)
 {
 	MINODE* pmip = NULL;
-	char* base = basename(pathname);
+	/*char* base = basename(pathname);
 	char* dir = dirname(pathname);
 
 	base[strlen(base) - 1] = '\0';
@@ -249,9 +283,10 @@ void creat_fs(char* pathname)
 	{
 		printf("File already exists\n");
 		return;
-	}
+	}*/
+	pmip = get_parent_minode(pathname);
 
-	kcreat(pmip, base);
+	kcreat(pmip, basename(pathname));
 
 	pmip->inode.i_links_count++;
 	pmip->dirty = 1;
