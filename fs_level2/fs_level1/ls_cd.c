@@ -65,19 +65,23 @@ void ls(char* pathname)
 
 void cd(char* pathname)
 {
+	char* base = NULL;
 	MINODE* mip = NULL, *omip = running->cwd;
 	int ino;
-	if(pathname == NULL || strcmp(pathname, "/") == 0 || 
-		pathname[0] == '\n')
+	if(pathname[0] == '/')
 	{
 		running->cwd = root;
+	printf("pathname: %s\n", pathname);
+		pathname = &pathname[1];
 	}
-	else
+	printf("pathname: %s\n", pathname);
+	if(pathname != NULL && pathname[0] != '\n')
 	{
 		ino = getino(&dev, pathname);
 
 		if(ino != 0)
 		{
+			
 			mip = iget(dev, ino);
 			
 			if(S_ISDIR(mip->inode.i_mode))
