@@ -13,11 +13,13 @@ void kmkdir(MINODE* pmip, char* basename)
 		mip->inode.i_block[i] = 0;
 	}
 	mip->inode.i_mode = 0x41A4;
+	mip->inode.i_size = BLKSIZE;
+	mip->inode.i_atime = (u32)time(NULL);
 	mip->dirty = 1;
 	iput(mip);
 
 	//make data block 0 of inode to contain . and .. entries
-	ip = &mip->inode;
+
 
 	get_block(dev, ip->i_block[0], buf);
 
@@ -38,12 +40,10 @@ void kmkdir(MINODE* pmip, char* basename)
 	dp->name_len = 2;
 	dp->file_type = 2;
 	dp->rec_len = 1012;
-	
 	dp->inode = pmip->ino;
 	//write to disk block blk
 	put_block(dev, blk, buf);
 
-	printf("basename: |%s|\n", basename);
 	enter_child(pmip, ino, basename, 2);
 	
 
@@ -70,7 +70,7 @@ void fs_mkdir(char* pathname)
 	if(pmip != NULL)
 	{
 		kmkdir(pmip, base);
-
+		
 		pmip->inode.i_links_count++;
 		pmip->dirty = 1;
 		iput(pmip);
@@ -90,9 +90,11 @@ void kcreat(MINODE* pmip, char* basename)
 
 	//make data block 0 of inode to contain . and .. entries
 
-
 	//test if done correctly
-	mip->inode.i_mode = 0x81A4;;
+
+	mip->inode.i_mode = 0x81A4;
+	mip->inode.i_size = 0;
+	mip->inode.i_atime = (u32)time(NULL);
 	
 	iput(mip);
 
@@ -115,7 +117,6 @@ void fs_creat(char* pathname)
 	{
 		base[strlen(base) - 1] = '\0';
 	}
-	printf("base: |%s|\n", base);
 
 	if(pmip != NULL)
 	{

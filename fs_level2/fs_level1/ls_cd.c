@@ -5,22 +5,31 @@ void ls(char* pathname)
 
 	int ino;
 	char* cp;
-	int i_size = 0;
-
+	char* name;
+	int i_size = 0, pino;
+	MINODE* pmip = NULL;
 
  	dev = running->cwd->dev;
 
 	MINODE* mip = NULL;
-	if(pathname[0] == '\n' )
+	if(pathname[0] == '\n' || strcmp(pathname, "\n") == 0)
 	{
 		pathname[0] = '.';
+		pathname[1] = 0;
 	}
 
-	ino = getino(&dev, basename(pathname));
+	if(pathname[0] == '/' && pathname[1] == '\n')
+	{
+		ino = root->ino;
+	}
+	else
+	{
+		ino = getino(&dev, pathname);
+	}
 
 	if(ino <= 0)
 	{
-		printf("Directory not found\n"); 
+		printf("Directory not found\n");
 		return;
 	}
 	
@@ -30,27 +39,35 @@ void ls(char* pathname)
 
 	ip = &mip->inode;
 
-	printf("printing directory...\n");
+	if(!S_ISDIR(ip->i_mode))
+	{
+
+		pmip = iget(dev, file_parent_ino);
+		findmyname(pmip, ino, name);
+		print_dir();
+		iput(pmip);
+		return;
+	}
+
 	int i = 0;
 	for(i = 0; i < 12; i++)
 	{
 		if(ip->i_block[i] != 0)
 		{
-			get_block(dev, ip->i_block[i], buf);
+			get_block(dev, ip->i_block[i], ls_buf);
 			
-			cp = buf;
-		    while (cp < buf + BLKSIZE)
+			cp = ls_buf;
+		    while (cp < (ls_buf + BLKSIZE))
 			{
 		   		dp = (DIR *)cp;
-				if(dp->rec_len <= 0)
+				if(dp->rec_len <= 0 || dp->rec_len > 1024)
 				{
-				printf("ERROR: dp->rec_len of %d is invalid\n", dp->rec_len);
 					break;
 				}
+
 				print_dir();
+
 				cp += dp->rec_len;
-
-
 		    }
 			
 		}
@@ -71,10 +88,8 @@ void cd(char* pathname)
 	if(pathname[0] == '/')
 	{
 		running->cwd = root;
-	printf("pathname: %s\n", pathname);
 		pathname = &pathname[1];
 	}
-	printf("pathname: %s\n", pathname);
 	if(pathname != NULL && pathname[0] != '\n')
 	{
 		ino = getino(&dev, pathname);
@@ -91,6 +106,7 @@ void cd(char* pathname)
 			}
 			else
 			{
+				iput(mip);
 				printf("File is not directory\n");
 			}
 		}else

@@ -38,8 +38,10 @@ extern PROC   proc[NPROC], *running;
 extern MINODE *root;
 
 extern int dev, imap, bmap;
+extern int file_parent_ino;
 extern int ninodes, nblocks;
 extern int blk, offset;
 extern int inodes_begin_block, inodes_per_block;
 extern char buf[BLKSIZE];
+extern char ls_buf[BLKSIZE];
 extern char buf2[BLKSIZE];

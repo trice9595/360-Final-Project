@@ -2,6 +2,16 @@
 #include "open_close.c"
 #include "read_write.c"
 
+void pfd()
+{
+	int i = 0;
+	while(running->fd[i] != NULL)
+	{
+		printf("fd[%d] is opened\n", i);
+		i++;
+	}
+}
+
 int fs_lseek(int fd, int position)
 {
 	//set file's OFT to beginning of file + postition
@@ -24,10 +34,16 @@ void fs_cat(char* filename)
 {
 	char mybuf[1024], dummy = 0;
 	int n;
+	char copy[128];
+
+	strcpy(copy, filename);
 
 	int fd = fs_open(filename, 0);
 	while(n = read_file(fd, mybuf, 1024))
 	{
+		if(n == -1)
+			return;
+
 		mybuf[n] = 0;	
 		printf("%s", mybuf); //add \n handling
 	}
@@ -36,17 +52,17 @@ void fs_cat(char* filename)
 
 void fs_cp(char* src, char* dest)
 {
-	char mybuf[1024], dummy = 0;
+	char mybuf[1024] = { 0 }, dummy = 0;
 	int n;
+	char copy[128];
+	strcpy(copy, dest);
 
 	int fd = fs_open(src, 0);
 	int gd = fs_open(dest, 1);
-	printf("fd: %d\ngd: %d\n", fd, gd);
 	if(gd < 0)
 	{
-		fs_creat(dest);
+		fs_creat(copy);
 		gd = fs_open(dest, 1);
-		printf("gd: %d\n", gd);
 	}
 
 	while(n = read_file(fd, mybuf, 1024))

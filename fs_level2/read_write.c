@@ -13,7 +13,7 @@ u32 read_map(MINODE* mptr, int lbk)
 	{
 		blk = mptr->inode.i_block[lbk];
 	}
-	else if((12 <= lbk) && 12 < 12+256) //indirect blocks
+	else if((12 <= lbk) && lbk < 12+256) //indirect blocks
 	{	
 		get_u32_block(dev, mptr->inode.i_block[12], ibuf);
 		blk = ibuf[lbk-12];
@@ -117,6 +117,7 @@ int myread(int fd, char *fbuf, int nbytes)
        startByte = oftp->offset % BLKSIZE;
 
        blk = read_map(mip, lbk);
+		printf("blk: %d\n");
        /* get the data block into readbuf[BLKSIZE] */
        get_block(mip->dev, blk, readbuf);
 
@@ -133,7 +134,7 @@ int myread(int fd, char *fbuf, int nbytes)
        }
  
        // if one data block is not enough, loop back to OUTER while for more ...
-
+   printf("myread: read %d char into file descriptor %d\n", count, fd); 
    }
 	mip->dirty = 1;
    return count;   // count is the actual number of bytes read
@@ -152,9 +153,10 @@ int read_file(int fd, char fbuf[], int nbytes)
 	}
 	
 	mip = running->fd[fd]->mptr;
-
+	printf("mip->ino: %d\n", mip->ino);
 	//2 (regular file):
 	//return read_file(fd, buf, nbytes, space);
+
 	if(!S_ISREG(mip->inode.i_mode))
 	{
 		printf("not reg file\n");
@@ -171,15 +173,18 @@ int mywrite(int fd, char* fbuf, int nbytes)
 	OFT* oftp = running->fd[fd];
  	int lbk = 0, startByte = 0, remain = 0;
     char *cq = fbuf, *cp = NULL; // cq points at buf[ ]
-
+	int count = 0;
+	printf("here\n");
     while (nbytes > 0){
 
        //Compute LOGICAL BLOCK number lbk and startByte in that block from offset;
+
 
        lbk = oftp->offset / BLKSIZE;
        startByte = oftp->offset % BLKSIZE;  
        
        blk = write_map(mip, lbk);
+		printf("blk: %d\n");
        /* get the data block into readbuf[BLKSIZE] */
        get_block(mip->dev, blk, writebuf);
 
@@ -188,10 +193,11 @@ int mywrite(int fd, char* fbuf, int nbytes)
        cp = writebuf + startByte;   
        remain = BLKSIZE - startByte;   // number of bytes remain in readbuf[]
        while (remain > 0){
-            *cp++ = *cq++; // copy byte from readbuf[] into buf[]
+            *cp++ = *cq++; // copy byte from readbuf[] into buf[]		
 			oftp->offset++; // advance offset 
 			nbytes--;  remain--;
 			
+			count++;
 			if(oftp->offset > mip->inode.i_size)
 				mip->inode.i_size++; //inc file size
             if (nbytes <= 0) 
@@ -203,7 +209,7 @@ int mywrite(int fd, char* fbuf, int nbytes)
 
    }
 	mip->dirty = 1;
-   printf("mywrite: wrote %d char into file descriptor %d\n", nbytes, fd);  
+   printf("mywrite: wrote %d char into file descriptor %d\n", count, fd);  
 
 
    return nbytes;   //number of bytes written
@@ -212,6 +218,11 @@ int mywrite(int fd, char* fbuf, int nbytes)
 int write_file(int fd, char* fbuf, int nbytes)
 {
 	MINODE* mip = NULL;
+	if(running->fd[fd] == NULL)
+	{
+		printf("INVALID FILE DESCRIPTOR\n");
+		return -1;
+	}
 	int mode = running->fd[fd]->mode;
 
 	if(mode != 1 && mode != 2 && mode != 3)
@@ -225,7 +236,7 @@ int write_file(int fd, char* fbuf, int nbytes)
 	//return read_file(fd, buf, nbytes, space);
 	if(!S_ISREG(mip->inode.i_mode))
 	{
-		printf("Not reg file, mode is %d\n", mip->inode.i_mode);
+		printf("Not reg file, mode is %d\n, inode is %d\n", mip->inode.i_mode);
 		return -1;
 	}
 

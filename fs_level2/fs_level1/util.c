@@ -1,5 +1,6 @@
 #include "type.h"
 #include "global.h"
+#include <time.h>
 
 
 off_t lseek(int fd, off_t offset, int whence);
@@ -127,45 +128,42 @@ void print_inode()
 	printf("ip->i_mode: %d\n\n", ip->i_mode);
 }
 
-void print_dir()
+void print_access_rights(int permissions)
 {
-	printf("dp->name: %s\n", dp->name);
-	printf("dp->file_type: %d\n", dp->file_type);
-	printf("dp->inode: %d\n", dp->inode);
-	printf("dp->name_len: %d\n", dp->name_len);
-	printf("dp->rec_len: %d\n", dp->rec_len);
-	printf("sizeof(dp): %d\n\n", sizeof(dp));
+	int i = 0;
+	char access[9];
+	for(i = 0; i < 9; i++)
+		access[i] = '-';
+
+	if(S_IRUSR & permissions)
+		access[0] = 'r';
+
+	if(S_IWUSR & permissions)
+		access[1] = 'w';
+
+	if(S_IXUSR & permissions)
+		access[2] = 'x';
+
+	if(S_IRGRP & permissions)
+		access[3] = 'r';
+
+	if(S_IWGRP & permissions)
+		access[4] = 'w';
+
+	if(S_IXGRP & permissions)
+		access[5] = 'x';
+
+	if(S_IROTH & permissions)
+		access[6] = 'r';
+
+	if(S_IWOTH & permissions)
+		access[7] = 'w';
+
+	if(S_IXOTH & permissions)
+		access[8] = 'x';
+
+	printf("%s", access);
 }
-
-void print_inode_contents()
-{
-	char sbuf[1024];
-   int i; 
-   char *cp;
-	
-	printf("printing inode contents...\n");
-   for (i=0; i<12; i++){  // ASSUME DIRs only has 12 direct blocks
-       if (ip->i_block[i] == 0)
-          return;
-		printf("i_block #%d\n", i);
-       get_block(dev, ip->i_block[i], sbuf);
-       dp = (DIR *)sbuf;
-       cp = sbuf;
-       while (cp < sbuf + BLKSIZE){
-	      print_dir();
-		  if(dp->rec_len <= 0)
-		  {
-			printf("ERROR: dp->rec_len of %d is invalid\n", dp->rec_len);
-			break;
-	      }
-          cp += dp->rec_len;
-          dp = (DIR *)cp;
-       }
-   }
-
-}
-
-
 
 int get_num_entries(INODE* inode)
 {
@@ -222,19 +220,22 @@ int search_inode(INODE* inode, char *name)
 }
 
 
+
+
 int getino(int* fd, char* pathname)
 {
 	char path[64];
 	char* names[512] = {NULL};
 	int ino = 0;
 	int x = 0;
-
+	printf("pathname: %s\n", pathname);
 	strcpy(path, pathname);
 	//absolute path
 	if(path[0] == '/')
 	{
 		printf("absolute path\n");
 		ip = &root->inode;
+		file_parent_ino = root->ino;		
 
 		if(strcmp(path, "/") == 0)
 		{
@@ -250,6 +251,7 @@ int getino(int* fd, char* pathname)
 	else
 	{
 		ip = &running->cwd->inode;
+		file_parent_ino = running->cwd->ino;
 	}
 		
 
@@ -267,6 +269,9 @@ int getino(int* fd, char* pathname)
 	while(names[x] != NULL && strcmp(names[x], "") != 0)
 	{
 		printf("searching for names[%d]: |%s|\n", x, names[x]);	
+		if(x > 0)
+			file_parent_ino = ino;			
+
 		ino = search_inode(ip, names[x]);
 		x++;
 		if(names[x] != NULL && strcmp(names[x], "") != 0)
@@ -277,6 +282,8 @@ int getino(int* fd, char* pathname)
 
 			ip = (INODE *)buf + offset;
 		}
+
+		
 	}
 	return ino;
 }
@@ -305,8 +312,8 @@ MINODE* iget(int fd, int ino)
 	}
 	
 	mailmans_algorithm(fd, ino);
-	get_block(fd, blk, buf);
-	ip = (INODE *)buf + offset;
+	get_block(fd, blk, buf2);
+	ip = (INODE *)buf2 + offset;
 	
 	//initialize minode properties
 	mip->inode = *ip;
@@ -331,6 +338,7 @@ void iput(MINODE *mip)
  	if(mip->refCount == 0 && mip->dirty == 1)
 	{
 		//write back to disk
+		printf("writing minode with ino #%d\n", mip->ino);
 		mailmans_algorithm(dev, mip->ino);
 
 		get_block(dev, blk, buf);
@@ -341,7 +349,64 @@ void iput(MINODE *mip)
 		put_block(dev, blk, buf);
 
 	}
-	mip = NULL;
+}
+
+
+
+void print_dir()
+{
+	char date[128];
+	MINODE* mip = iget(dev, dp->inode);
+
+	time_t t = (time_t)mip->inode.i_atime;
+	struct tm *tm = localtime(&t);
+
+	strftime(date, sizeof(date) - 1, "%m %d %H:%M", tm);
+
+	if(dp->file_type == 2)
+	{
+		printf("d");
+	}
+	else
+	{
+		printf("-");
+	}
+
+	print_access_rights(mip->inode.i_mode);
+	printf(" %d", mip->inode.i_links_count);
+	printf(" %d", mip->inode.i_size);
+	printf(" %s", date);
+	printf(" %s\n", dp->name);
+
+	iput(mip);
+}
+
+
+void print_inode_contents()
+{
+	char sbuf[1024];
+   int i; 
+   char *cp;
+	
+   for (i=0; i<12; i++){  // ASSUME DIRs only has 12 direct blocks
+       if (ip->i_block[i] == 0)
+          return;
+		printf("i_block #%d\n", i);
+       get_block(dev, ip->i_block[i], sbuf);
+       dp = (DIR *)sbuf;
+       cp = sbuf;
+       while (cp < sbuf + BLKSIZE){
+	      //print_dir(dp->inode, dp->name, dp->file_type);
+		  if(dp->rec_len <= 0)
+		  {
+			printf("ERROR: dp->rec_len of %d is invalid\n", dp->rec_len);
+			break;
+	      }
+          cp += dp->rec_len;
+          dp = (DIR *)cp;
+       }
+   }
+
 }
 
 
@@ -377,11 +442,12 @@ int findino(MINODE *mip)
 {
 	/*For a DIR Minode, extract the inumbers of . and .. 
 	Read in 0th data block. The inumbers are in the first two dir 		entries.*/
+	char ibuf[BLKSIZE];
 
-	char* cp = buf;
+	char* cp = ibuf;
 	ip = &mip->inode;
 
-	get_block(dev, ip->i_block[0], buf);
+	get_block(dev, ip->i_block[0], ibuf);
 	dp = (DIR *) cp;
 
     cp += dp->rec_len;
@@ -390,7 +456,7 @@ int findino(MINODE *mip)
 	if(strcmp(dp->name, "..") == 0)
 		return dp->inode;
 
-
+	
 	return -1;
 }
 
