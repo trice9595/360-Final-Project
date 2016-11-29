@@ -5,16 +5,7 @@
 #include "rm_rmdir.c"
 #include "link_unlink.c"
 #include "mkdir_creat.c"
-<<<<<<< HEAD
 #include <time.h>
-=======
->>>>>>> 2162979a461162be0f172d9c12420ac6b24e73ea
-
-/*
-Include all level 1 functions
-*/
-
-<<<<<<< HEAD
 
 int chmod_user(char mode, MINODE* mip)
 {
@@ -77,17 +68,12 @@ void fs_chmod(char* mod, char* filename)
 	MINODE* mip = NULL;
 	int ino = 0;
 	int i = 0;
-=======
-void fs_chmod(u16 mod, char* filename)
-{
-	MINODE* mip = NULL;
-	int ino = 0;
->>>>>>> 2162979a461162be0f172d9c12420ac6b24e73ea
+
 
 	ino = getino(&dev, filename);
 	mip = iget(dev, ino);
 
-<<<<<<< HEAD
+
 	if(i < strlen(mod))
 	{
 		chmod_other(mod[strlen(mod) - 1 - i], mip);
@@ -107,15 +93,12 @@ void fs_chmod(u16 mod, char* filename)
 	i++;
 	mip->dirty = 1;
 	iput(mip);
-=======
-	mip->inode.i_mode = mod;
->>>>>>> 2162979a461162be0f172d9c12420ac6b24e73ea
 }
 
 
 void fs_pwd()
 {
-<<<<<<< HEAD
+
 	int ino = 0, pino = 0, i = -1;
 	char parents[16][128];
 
@@ -154,10 +137,6 @@ void fs_pwd()
 	printf("/\n");
 
 	iput(pmip);
-=======
-	
-
->>>>>>> 2162979a461162be0f172d9c12420ac6b24e73ea
 }
 
 
@@ -173,14 +152,10 @@ void fs_touch(char* filename)
 	}
 	else
 	{
-<<<<<<< HEAD
 		mip = iget(dev, ino);
 		mip->inode.i_atime = (u32)time(NULL);
 		mip->dirty = 1;
 		iput(mip);
-=======
-		mip->inode.i_atime = (unsigned)time(NULL);
->>>>>>> 2162979a461162be0f172d9c12420ac6b24e73ea
 	}
 
 }

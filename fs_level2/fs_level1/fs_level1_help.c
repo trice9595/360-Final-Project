@@ -20,12 +20,7 @@ int add_dir_entry(int ino, char* basename, int rec_len, int file_type)
 	dp->rec_len = rec_len;
 	dp->file_type = file_type;
 	dp->inode = ino;
-<<<<<<< HEAD
-	//print_dir(*dp);
-	//ls(".");
-=======
-	print_dir();
->>>>>>> 2162979a461162be0f172d9c12420ac6b24e73ea
+
 }
 
 int get_last_entry(char* cp)
@@ -53,10 +48,7 @@ void enter_child(MINODE* pmip, int ino, char* basename, int file_type)
 
 	need_len = 4*((8+strlen(basename)+4)/4);
 	
-<<<<<<< HEAD
-=======
-	printf("entering child...\n");
->>>>>>> 2162979a461162be0f172d9c12420ac6b24e73ea
+
    for (i=0; i<12; i++)
 	{  // ASSUME DIRs only has 12 direct blocks
        if (pmip->inode.i_block[i] == 0)
@@ -96,21 +88,9 @@ void enter_child(MINODE* pmip, int ino, char* basename, int file_type)
 		else
 		{
 			//allocate new data block?????
-<<<<<<< HEAD
 			pmip->inode.i_block[i + 1] = balloc(dev);
 
 		}
-		
-=======
-			printf("*******\nallocate\n*******\n");
-			printf("*******\nnew\n*******\n");
-			printf("*******\ndata\n*******\n");
-			printf("*******\nblock\n*******\n");
-
-		}
-
->>>>>>> 2162979a461162be0f172d9c12420ac6b24e73ea
-		put_block(dev, pmip->inode.i_block[i], buf);
 	}
 	
 }
@@ -123,10 +103,6 @@ int get_permission(MINODE* mip)
 
 
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 2162979a461162be0f172d9c12420ac6b24e73ea
 MINODE* get_parent_minode(char* pathname)
 {
 
@@ -148,14 +124,8 @@ MINODE* get_parent_minode(char* pathname)
 		return NULL;
 
 	
-<<<<<<< HEAD
+
 	pino = getino(&dev, dir);
-=======
-	printf("base: %s\n", base);
-	printf("dir: %s\n", dir);
-	pino = getino(&dev, dir);
-	printf("pino: %d\n", pino);
->>>>>>> 2162979a461162be0f172d9c12420ac6b24e73ea
 
 	pmip = iget(dev, pino);
 	
@@ -170,10 +140,6 @@ MINODE* get_parent_minode(char* pathname)
 		return NULL;
 	}
 
-<<<<<<< HEAD
-
-=======
->>>>>>> 2162979a461162be0f172d9c12420ac6b24e73ea
 	return pmip;
 }
 
@@ -230,10 +196,7 @@ int rm_child(MINODE* pmip, char* name)
 					//middle of block somewhere
 					else
 					{
-<<<<<<< HEAD
-=======
-						
->>>>>>> 2162979a461162be0f172d9c12420ac6b24e73ea
+
 						//set place of dir to copy over
 						rmdir_place = cp;
 						deleted_rec_len = dp->rec_len;

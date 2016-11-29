@@ -38,16 +38,10 @@ extern PROC   proc[NPROC], *running;
 extern MINODE *root;
 
 extern int dev, imap, bmap;
-<<<<<<< HEAD
 extern int file_parent_ino;
-=======
->>>>>>> 2162979a461162be0f172d9c12420ac6b24e73ea
 extern int ninodes, nblocks;
 extern int blk, offset;
 extern int inodes_begin_block, inodes_per_block;
 extern char buf[BLKSIZE];
-<<<<<<< HEAD
 extern char ls_buf[BLKSIZE];
-=======
->>>>>>> 2162979a461162be0f172d9c12420ac6b24e73ea
 extern char buf2[BLKSIZE];
