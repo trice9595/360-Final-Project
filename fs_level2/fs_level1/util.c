@@ -12,7 +12,19 @@ int get_block(int fd, int blk, char* get_buf)
   read(fd, get_buf, BLKSIZE);
 }
 
+int get_u32_block(int fd, int blk, u32* get_buf)
+{
+  lseek(fd, (long)blk*BLKSIZE, 0);
+  read(fd, get_buf, BLKSIZE);
+}
+
 int put_block(int fd, int blk, char* put_buf)
+{
+  lseek(fd, (long)blk*BLKSIZE, 0);
+  write(fd, put_buf, BLKSIZE);
+}
+
+int put_u32_block(int fd, int blk, u32* put_buf)
 {
   lseek(fd, (long)blk*BLKSIZE, 0);
   write(fd, put_buf, BLKSIZE);
@@ -91,8 +103,6 @@ void calculate_mount_info(int fd)
 	read_group_desc_block(fd);
 	inodes_per_block = read_super_block(fd);
 
-	printf("inodes_per_block: %d\n", inodes_per_block);
-	printf("inodes_begin_block: %d\n", inodes_begin_block);
 }
 
 
@@ -119,7 +129,6 @@ void print_inode()
 
 void print_dir()
 {
-
 	printf("dp->name: %s\n", dp->name);
 	printf("dp->file_type: %d\n", dp->file_type);
 	printf("dp->inode: %d\n", dp->inode);
@@ -233,7 +242,6 @@ int getino(int* fd, char* pathname)
 	while(names[x] != NULL && strcmp(names[x], "") != 0)
 	{
 		
-		printf("searching for names[%d] = %s\n", x, names[x]);
 		int i = 0;
 		ino = search_inode(ip, names[x]);
 		x++;
@@ -254,7 +262,6 @@ MINODE* iget(int fd, int ino)
 {
 	MINODE* mip = NULL;
 	int i = 0;
-	printf("searching for minode with inode #%d\n", ino);
 
 	for(i = 0; i < NMINODE; i++)
 	{
@@ -263,19 +270,13 @@ MINODE* iget(int fd, int ino)
 			&& minode[i].dev == fd)
 		{
 			minode[i].refCount++;
-			printf("**minode found at %d**\n\n", i);
 			return &minode[i];				
 		}
 		//empty minode found and mip is still null
 		else if(minode[i].refCount == 0 && mip == NULL)
 		{
-			printf("**minode created at %d**\n\n", i);
 			mip = &minode[i];
 			break;
-		}
-		else
-		{	
-			printf("minode[%d]: \n", i);
 		}
 	}
 	
@@ -306,7 +307,6 @@ void iput(MINODE *mip)
  	if(mip->refCount == 0 && mip->dirty == 1)
 	{
 		//write back to disk
-		printf("writing back to disk at ino #%d...\n", mip->ino);
 		mailmans_algorithm(dev, mip->ino);
 
 		get_block(dev, blk, buf);
@@ -316,10 +316,6 @@ void iput(MINODE *mip)
 		
 		put_block(dev, blk, buf);
 
-	}
-	else
-	{
-		printf("did not write to disk\n");
 	}
 	mip = NULL;
 }
@@ -345,7 +341,6 @@ int findmyname(MINODE *parent, int myino, char *myname)
 		  if(dp->inode == myino)
 		  {
 			  myname = dp->name;
-			  printf("Found inode #%d with name: %s\n", myino, myname);
 			  return 1;
 		  }
           cp += dp->rec_len;

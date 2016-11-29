@@ -1,5 +1,17 @@
 
+void fs_truncate(MINODE* mip)
+{
+	int i = 0;
 
+	ip = &mip->inode;
+	
+	for (i = 0; i < 12; i++)
+	{
+		bdealloc(dev, ip->i_block[i]);
+		ip->i_block[i] = 0;
+	}
+
+}
 
 int add_dir_entry(int ino, char* basename, int rec_len, int file_type)
 {
@@ -61,7 +73,6 @@ void enter_child(MINODE* pmip, int ino, char* basename, int file_type)
 			return;
 		}
 		
-	    print_dir();
 		cp += dp->rec_len;
 
 		get_last_entry(cp);
@@ -91,59 +102,16 @@ void enter_child(MINODE* pmip, int ino, char* basename, int file_type)
 }
 
 
-void kmkdir(MINODE* pmip, char* basename)
+int get_permission(MINODE* mip)
 {
-	char* cp;
-	int i, ino = ialloc(dev);
-	int blk = balloc(dev);
-	MINODE* mip = iget(dev, ino);
-	
-
-	mip->inode.i_block[0] = blk;
-	for(i = 1; i < 12; i++)
-	{
-		mip->inode.i_block[i] = 0;
-	}
-	mip->inode.i_mode = 0x41A4;
-	mip->dirty = 1;
-	iput(mip);
-
-	//make data block 0 of inode to contain . and .. entries
-	ip = &mip->inode;
-
-	get_block(dev, ip->i_block[0], buf);
-
-
-	cp = buf;
-
-	dp = (DIR *)cp;
-	strcpy(dp->name, ".");
-	dp->name_len = 1;
-	dp->file_type = 2;
-	dp->rec_len = 12;
-	dp->inode = ino;
-
-
-    cp += dp->rec_len;
-	dp = (DIR *)cp;
-    
-	strcpy(dp->name, "..");
-	dp->name_len = 2;
-	dp->file_type = 2;
-	dp->rec_len = 1012;
-	dp->inode = pmip->ino;
-
-	//write to disk block blk
-	put_block(dev, blk, buf);
-
-
-
-	enter_child(pmip, ino, basename, 2);
-	
-
-    //which enters (ino, basename) as a DIR entry to the parent INODE
-
+	return mip->inode.i_mode;
 }
+
+int set_permission(MINODE* mip)
+{
+	
+}
+
 
 MINODE* get_parent_minode(char* pathname)
 {
@@ -187,56 +155,94 @@ MINODE* get_parent_minode(char* pathname)
 	return pmip;
 }
 
-void mkdir_fs(char* pathname)
+int rm_child(MINODE* pmip, char* name)
 {
-	MINODE* pmip = NULL;
+	char* cp, ibuf[10];
+	char* prev_dir;
+	int i = 0, prev_rec_len = 0, last_rec_len = 0;
+	int remaining_blk_size = 0, deleted_rec_len = 0;
+	char* rmdir_place = 0;
+	DIR copy;	
 
-	pmip = get_parent_minode(pathname);
-	kmkdir(pmip, basename(pathname));
+	for(i = 0; i < 12; i++)
+	{
+		if(pmip->inode.i_block[i] == 0)
+			break;
 
-	pmip->inode.i_links_count++;
-	pmip->dirty = 1;
-	iput(pmip);
+        get_block(dev, pmip->inode.i_block[i], buf);
+		
+        cp = buf;
 
+		while (cp < buf + BLKSIZE)
+		{
+	   		dp = (DIR *)cp;
+			if(dp->rec_len <= 0)
+			{
+				printf("ERROR: dp->rec_len of %d is invalid\n", dp->rec_len);
+				break;
+			}
 
+			if(strcmp(dp->name, name) != 0)
+			{
+				prev_rec_len = dp->rec_len;
+				cp += dp->rec_len;
+			}
+			else
+			{
+				//only entry in block
+				if(dp->rec_len == BLKSIZE)
+				{
+					dp->inode = 0;
+				}
+				else
+				{
+					//last entry in block
+					if(cp + dp->rec_len >= buf + BLKSIZE)
+					{
+						last_rec_len = dp->rec_len;
+						cp -= prev_rec_len;
+						dp = (DIR *)cp;
+
+						dp->rec_len += last_rec_len;
+					}
+					//middle of block somewhere
+					else
+					{
+						
+						//set place of dir to copy over
+						rmdir_place = cp;
+						deleted_rec_len = dp->rec_len;
+
+						//get length of block after deletion
+						remaining_blk_size = buf + BLKSIZE - cp;
+
+						//find last entry
+						while (cp + dp->rec_len < buf + BLKSIZE)
+						{
+							cp += dp->rec_len;
+							dp = (DIR *)cp;
+
+							if(dp->rec_len <= 0)
+							{
+								printf("rec_len is less than or equal to zero\n");
+								break;
+							}
+						}
+						//add deleted rec_len to last entry
+						dp->rec_len += deleted_rec_len;
+						dp = (DIR *)rmdir_place;
+
+						//move all following directories back
+						memmove(rmdir_place, rmdir_place + dp->rec_len, remaining_blk_size);
+						break;
+					}
+				}
+			}
+		}
+		put_block(dev, pmip->inode.i_block[i], buf);
+
+   }
 }
 
 
-void kcreat(MINODE* pmip, char* basename)
-{
-	char* cp;
-	int i, ino = ialloc(dev);
-	MINODE* mip = iget(dev, ino);
-	
-	//do I need to mark it dirty and put it
-
-	mip->dirty = 1;
-
-	//make data block 0 of inode to contain . and .. entries
-
-
-	//test if done correctly
-	mip->inode.i_mode = 0x81A4;
-	
-	iput(mip);
-
-	enter_child(pmip, ino, basename, 1);
-	
-
-    //which enters (ino, basename) as a DIR entry to the parent INODE
-
-}
-
-void creat_fs(char* pathname)
-{
-	MINODE* pmip = NULL;
-
-	pmip = get_parent_minode(pathname);
-
-	kcreat(pmip, basename(pathname));
-
-	pmip->inode.i_links_count++;
-	pmip->dirty = 1;
-	iput(pmip);
-}
 

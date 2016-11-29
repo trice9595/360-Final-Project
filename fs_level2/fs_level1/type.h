@@ -1,14 +1,8 @@
 /*************** type.h file ******************/
 
 #include <ext2fs/ext2_fs.h>
-/*
-typedef enum flag 
-{
-	O_RDONLY = 1 << 0, 
-	OWRONLY = 1 << 1, 
-	O_RDWR = 1 << 
-};
-*/
+
+
 typedef struct minode{
   struct ext2_inode inode;
   int dev, ino;
