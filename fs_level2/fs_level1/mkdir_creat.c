@@ -21,7 +21,6 @@ void kmkdir(MINODE* pmip, char* basename)
 
 	get_block(dev, ip->i_block[0], buf);
 
-
 	cp = buf;
 
 	dp = (DIR *)cp;
@@ -31,21 +30,20 @@ void kmkdir(MINODE* pmip, char* basename)
 	dp->rec_len = 12;
 	dp->inode = ino;
 
-
     cp += dp->rec_len;
 	dp = (DIR *)cp;
     
+
 	strcpy(dp->name, "..");
 	dp->name_len = 2;
 	dp->file_type = 2;
 	dp->rec_len = 1012;
+	
 	dp->inode = pmip->ino;
-
 	//write to disk block blk
 	put_block(dev, blk, buf);
 
-
-
+	printf("basename: |%s|\n", basename);
 	enter_child(pmip, ino, basename, 2);
 	
 
@@ -56,16 +54,27 @@ void kmkdir(MINODE* pmip, char* basename)
 
 void fs_mkdir(char* pathname)
 {
+	char base[64];
+	strcpy(base, basename(pathname));
 	MINODE* pmip = NULL;
 
 	pmip = get_parent_minode(pathname);
-	kmkdir(pmip, basename(pathname));
-
-	pmip->inode.i_links_count++;
-	pmip->dirty = 1;
-	iput(pmip);
 
 
+
+	if(base[strlen(base) - 1] == '\n')
+	{
+		base[strlen(base) - 1] = '\0';
+	}
+
+	if(pmip != NULL)
+	{
+		kmkdir(pmip, base);
+
+		pmip->inode.i_links_count++;
+		pmip->dirty = 1;
+		iput(pmip);
+	}
 }
 
 
@@ -96,14 +105,25 @@ void kcreat(MINODE* pmip, char* basename)
 
 void fs_creat(char* pathname)
 {
+	char base[64];
 	MINODE* pmip = NULL;
 
+	strcpy(base, basename(pathname));
 	pmip = get_parent_minode(pathname);
 
-	kcreat(pmip, basename(pathname));
+	if(base[strlen(base) - 1] == '\n')
+	{
+		base[strlen(base) - 1] = '\0';
+	}
+	printf("base: |%s|\n", base);
 
-	pmip->inode.i_links_count++;
-	pmip->dirty = 1;
-	iput(pmip);
+	if(pmip != NULL)
+	{
+		kcreat(pmip, base);
+
+		pmip->inode.i_links_count++;
+		pmip->dirty = 1;
+		iput(pmip);
+	}
 }
 

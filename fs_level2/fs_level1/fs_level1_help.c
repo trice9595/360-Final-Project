@@ -28,7 +28,6 @@ int get_last_entry(char* cp)
    while (cp < buf + BLKSIZE)
 	{
    		dp = (DIR *)cp;
-        print_dir();
 		if(dp->rec_len <= 0)
 		{
 			printf("ERROR: dp->rec_len of %d is invalid\n", dp->rec_len);
@@ -107,19 +106,20 @@ int get_permission(MINODE* mip)
 	return mip->inode.i_mode;
 }
 
-int set_permission(MINODE* mip)
-{
-	
-}
+
 
 
 MINODE* get_parent_minode(char* pathname)
 {
 
 	MINODE* pmip = NULL;
-	char* base = basename(pathname);
-	char* dir = dirname(pathname);
+	char base[64], dir[64];
+
+	strcpy(base, basename(pathname));
+	strcpy(dir, dirname(pathname));
+
 	int pino = 0;
+
 
 	if(base[strlen(base) - 1] == '\n')
 	{
@@ -129,15 +129,12 @@ MINODE* get_parent_minode(char* pathname)
 	if(base == NULL || strcmp(base, ".") == 0)
 		return NULL;
 
-	if(strcmp(dir, ".") != 0)
-	{
-		printf("dir: %s\n", dir);
-		pino = getino(&dev, dir);
-	}
-	else
-	{
-		pino = running->cwd->ino;
-	}
+	
+	printf("base: %s\n", base);
+	printf("dir: %s\n", dir);
+	pino = getino(&dev, dir);
+	printf("pino: %d\n", pino);
+
 	pmip = iget(dev, pino);
 	
 	if(!S_ISDIR(pmip->inode.i_mode))
@@ -145,7 +142,6 @@ MINODE* get_parent_minode(char* pathname)
 		printf("Invalid path with i_mode #%d\n", pmip->inode.i_mode);
 		return NULL;
 	}
-	
 	if(search_inode(&pmip->inode, base) != 0)
 	{
 		printf("File already exists\n");

@@ -224,25 +224,49 @@ int search_inode(INODE* inode, char *name)
 
 int getino(int* fd, char* pathname)
 {
+	char path[64];
 	char* names[512] = {NULL};
 	int ino = 0;
 	int x = 0;
 
-	ip =&running->cwd->inode;
-
-	if(strcmp(pathname, "."))
+	strcpy(path, pathname);
+	//absolute path
+	if(path[0] == '/')
 	{
-		tokenize(pathname, names);
+		printf("absolute path\n");
+		ip = &root->inode;
+
+		if(strcmp(path, "/") == 0)
+		{
+			ino = root->ino;
+		}
+		else
+		{
+			strcpy(path, &pathname[1]);
+			printf("new path: |%s|\n", path);
+		}
+	}
+	//relative path
+	else
+	{
+		ip = &running->cwd->inode;
+	}
+		
+
+	if(strcmp(path, ".") != 0)
+	{
+		tokenize(path, names);
 	}
 	else
 	{
-		names[0] = pathname;
+		names[0] = path;
 	}
+
+	printf("pathname: |%s|\n", path);
 
 	while(names[x] != NULL && strcmp(names[x], "") != 0)
 	{
-		
-		int i = 0;
+		printf("searching for names[%d]: |%s|\n", x, names[x]);	
 		ino = search_inode(ip, names[x]);
 		x++;
 		if(names[x] != NULL && strcmp(names[x], "") != 0)

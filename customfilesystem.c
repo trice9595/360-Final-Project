@@ -88,7 +88,11 @@ int main(int argc, char *argv[], char *env[])
 		printf ("\n");		
 
 		for(i = 0; i < 32; i++)
+		{
+			frankenstring[i] = '\0';
+
 			splitInput[i] = NULL;
+		}
 
 		i = 1;
 		
@@ -192,6 +196,8 @@ int main(int argc, char *argv[], char *env[])
 				printf("text: %s\n", frankenstring);
 
 				write_file(of.fd, frankenstring, strlen(frankenstring));
+
+				k = 0;
 			}
 			else
 			{
@@ -201,9 +207,9 @@ int main(int argc, char *argv[], char *env[])
 			}
 
 		}
-		else if (!strcmp(splitInput[0], "read"))
+		else if (!strcmp(splitInput[0], "read") && splitInput[1] && splitInput[2])
 		{
-			read_file(of.fd, output2, 4096);
+			read_file(of.fd, output2, atoi(splitInput[2]));
 			printf("\n%s\n", output2);
 		}
 		else if (!strcmp(splitInput[0], "lseek") && splitInput[1] && splitInput[2])
