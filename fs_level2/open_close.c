@@ -21,6 +21,10 @@ int fs_open(char* file, int flags)
 		//ino = getino(&dev, file)
 	}
 	mip = iget(dev, ino);
+<<<<<<< HEAD
+=======
+	
+>>>>>>> 2162979a461162be0f172d9c12420ac6b24e73ea
 	//2. check file INODE's access permission;
 
 	permission = get_permission(mip);
@@ -88,8 +92,12 @@ int fs_close(int fd)
 	    }
     }
 
+<<<<<<< HEAD
 	free(running->fd[fd]); 
 	running->fd[fd] = 0;//clear fd to 0
+=======
+	running->fd[fd] = 0; //clear fd to 0
+>>>>>>> 2162979a461162be0f172d9c12420ac6b24e73ea
 	return 1;
 	
 }

@@ -5,13 +5,19 @@ void ls(char* pathname)
 
 	int ino;
 	char* cp;
+<<<<<<< HEAD
 	char* name;
 	int i_size = 0, pino;
 	MINODE* pmip = NULL;
+=======
+	int i_size = 0;
+
+>>>>>>> 2162979a461162be0f172d9c12420ac6b24e73ea
 
  	dev = running->cwd->dev;
 
 	MINODE* mip = NULL;
+<<<<<<< HEAD
 	if(pathname[0] == '\n' || strcmp(pathname, "\n") == 0)
 	{
 		pathname[0] = '.';
@@ -30,6 +36,18 @@ void ls(char* pathname)
 	if(ino <= 0)
 	{
 		printf("Directory not found\n");
+=======
+	if(pathname[0] == '\n' )
+	{
+		pathname[0] = '.';
+	}
+
+	ino = getino(&dev, basename(pathname));
+
+	if(ino <= 0)
+	{
+		printf("Directory not found\n"); 
+>>>>>>> 2162979a461162be0f172d9c12420ac6b24e73ea
 		return;
 	}
 	
@@ -39,6 +57,7 @@ void ls(char* pathname)
 
 	ip = &mip->inode;
 
+<<<<<<< HEAD
 	if(!S_ISDIR(ip->i_mode))
 	{
 
@@ -49,11 +68,15 @@ void ls(char* pathname)
 		return;
 	}
 
+=======
+	printf("printing directory...\n");
+>>>>>>> 2162979a461162be0f172d9c12420ac6b24e73ea
 	int i = 0;
 	for(i = 0; i < 12; i++)
 	{
 		if(ip->i_block[i] != 0)
 		{
+<<<<<<< HEAD
 			get_block(dev, ip->i_block[i], ls_buf);
 			
 			cp = ls_buf;
@@ -68,6 +91,23 @@ void ls(char* pathname)
 				print_dir();
 
 				cp += dp->rec_len;
+=======
+			get_block(dev, ip->i_block[i], buf);
+			
+			cp = buf;
+		    while (cp < buf + BLKSIZE)
+			{
+		   		dp = (DIR *)cp;
+				if(dp->rec_len <= 0)
+				{
+				printf("ERROR: dp->rec_len of %d is invalid\n", dp->rec_len);
+					break;
+				}
+				print_dir();
+				cp += dp->rec_len;
+
+
+>>>>>>> 2162979a461162be0f172d9c12420ac6b24e73ea
 		    }
 			
 		}
@@ -88,8 +128,15 @@ void cd(char* pathname)
 	if(pathname[0] == '/')
 	{
 		running->cwd = root;
+<<<<<<< HEAD
 		pathname = &pathname[1];
 	}
+=======
+	printf("pathname: %s\n", pathname);
+		pathname = &pathname[1];
+	}
+	printf("pathname: %s\n", pathname);
+>>>>>>> 2162979a461162be0f172d9c12420ac6b24e73ea
 	if(pathname != NULL && pathname[0] != '\n')
 	{
 		ino = getino(&dev, pathname);
@@ -106,7 +153,10 @@ void cd(char* pathname)
 			}
 			else
 			{
+<<<<<<< HEAD
 				iput(mip);
+=======
+>>>>>>> 2162979a461162be0f172d9c12420ac6b24e73ea
 				printf("File is not directory\n");
 			}
 		}else

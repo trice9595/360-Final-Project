@@ -2,12 +2,18 @@
 void fs_link(char* oldfile, char* newfile)
 {
 
+<<<<<<< HEAD
 	MINODE *omip = NULL, *pmip = NULL, *nmip = NULL;
 	int oino = 0, nino = 0, pino = 0;
 	char newdir[128];
 	char base[128];
 	strcpy(base, basename(newfile));
 	strcpy(newdir, dirname(newfile));
+=======
+	MINODE *omip = NULL, *pmip = NULL;
+	int oino = 0, nino = 0, pino = 0;
+	char* newdir = dirname(newfile);
+>>>>>>> 2162979a461162be0f172d9c12420ac6b24e73ea
 
 	//1. verify oldfile and is not DIR
 	oino = getino(&dev, oldfile);
@@ -52,6 +58,7 @@ void fs_link(char* oldfile, char* newfile)
 		return;
 	}
 	
+<<<<<<< HEAD
 	nmip = iget(dev, nino);
 	nmip->dirty = 1;
 
@@ -69,6 +76,12 @@ void fs_link(char* oldfile, char* newfile)
 	}
 
 	enter_child(pmip, omip->ino, base, 7);
+=======
+
+	pmip = iget(dev, pino);
+
+	enter_child(pmip, omip->ino, basename(newfile), 7);
+>>>>>>> 2162979a461162be0f172d9c12420ac6b24e73ea
 
 	omip->inode.i_links_count++;
 	omip->dirty = 1;
@@ -82,10 +95,14 @@ void fs_unlink(char* filename)
 	
 	int ino = 0, pino = 0;
 	MINODE* mip = NULL, *pmip = NULL;
+<<<<<<< HEAD
 	char base[128];
 	strcpy(base, basename(filename));
 	char* dir = dirname(filename);
 	
+=======
+	char* dir = dirname(filename);
+>>>>>>> 2162979a461162be0f172d9c12420ac6b24e73ea
 
 
 	//1. get filename's minode:
@@ -105,6 +122,7 @@ void fs_unlink(char* filename)
 
 	pmip = iget(dev, pino);
 
+<<<<<<< HEAD
 
 	if(base[strlen(base) - 1] == '\n')
 	{
@@ -112,6 +130,9 @@ void fs_unlink(char* filename)
 	}
 
 	rm_child(pmip, base);
+=======
+	rm_child(pmip, basename(filename));
+>>>>>>> 2162979a461162be0f172d9c12420ac6b24e73ea
 	pmip->dirty = 1;
 	iput(pmip);
 
@@ -140,8 +161,11 @@ void fs_symlink(char* oldfile, char* newfile)
 	char* cp;
 	int i = 0;
 	int oino = 0, nino = 0, pino, blk;
+<<<<<<< HEAD
 	char base[128];
 	strcpy(base, basename(newfile));
+=======
+>>>>>>> 2162979a461162be0f172d9c12420ac6b24e73ea
 	char* dir = dirname(newfile);
 
 	MINODE* omip = NULL, *nmip = NULL, *pmip = NULL;
@@ -168,6 +192,7 @@ void fs_symlink(char* oldfile, char* newfile)
 		nmip->inode.i_block[i] = 0;
 	}
 
+<<<<<<< HEAD
 	nmip->inode.i_atime = (u32)time(NULL);
 	nmip->inode.i_size = BLKSIZE;
 	nmip->inode.i_mode = 0xA1A4;
@@ -185,6 +210,22 @@ void fs_symlink(char* oldfile, char* newfile)
 
 	enter_child(pmip, nino, base, 7);
 
+=======
+	nmip->dirty = 1;
+	iput(nmip);
+
+	//make data block 0 of inode to contain . and .. entries
+	ip = &nmip->inode;
+
+	//test if done correctly
+	ip->i_mode = 0xA1A4;
+
+	pmip = get_parent_minode(newfile);
+	enter_child(pmip, nino, basename(newfile), 7);
+
+	//2. Change newfile to slink type
+	ip->i_mode = 0xA1A4;
+>>>>>>> 2162979a461162be0f172d9c12420ac6b24e73ea
 
 	//3. assume length of oldfile name <= 60 chars
 	//	store oldfile name in newfiles inode.i_block[] area
@@ -197,7 +238,11 @@ void fs_symlink(char* oldfile, char* newfile)
 
 	nmip->dirty = 1;
 
+<<<<<<< HEAD
 	iput(omip);
+=======
+	iput(nmip);
+>>>>>>> 2162979a461162be0f172d9c12420ac6b24e73ea
 	
 
 	pmip->dirty = 1;
@@ -214,7 +259,10 @@ int fs_readlink(char* pathname, char buffer[])
 	//2. copy target filename in inode.i_block into a buffer
 	get_block(dev, mip->inode.i_block[0], buffer);
 	printf("target filename: %s\n", buffer);
+<<<<<<< HEAD
 	iput(mip);
+=======
+>>>>>>> 2162979a461162be0f172d9c12420ac6b24e73ea
 	//3. return strlen((char *)mip->inode.i_block)
 	return strlen((char *)buffer);
 	

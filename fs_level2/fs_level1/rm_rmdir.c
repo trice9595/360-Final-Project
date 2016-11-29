@@ -30,17 +30,26 @@ int fs_rmdir(char* pathname)
 	if(mip->refCount != 1)
 	{
 		printf("Minode is busy\n");
+<<<<<<< HEAD
 		printf("refcount = %d\n", mip->refCount);
 		iput(mip);
+=======
+>>>>>>> 2162979a461162be0f172d9c12420ac6b24e73ea
 		return 0;
 	}
 
 	//dir only contains . and .. entries
 	num_entries = get_num_entries(&mip->inode);
+<<<<<<< HEAD
 	if(num_entries > 2)
 	{
 		printf("DIR is not empty. DIR has %d entries\n", num_entries);
 		iput(mip);
+=======
+	if(num_entries != 2)
+	{
+		printf("DIR is not empty. DIR has %d entries\n", num_entries);
+>>>>>>> 2162979a461162be0f172d9c12420ac6b24e73ea
 		return 0;
 	}
 
@@ -54,12 +63,15 @@ int fs_rmdir(char* pathname)
 	findmyname(pmip, ino, base);
 
 	//remove name from parent directory	
+<<<<<<< HEAD
 
 	if(base[strlen(base) - 1] == '\n')
 	{
 		base[strlen(base) - 1] = '\0';
 	}
 
+=======
+>>>>>>> 2162979a461162be0f172d9c12420ac6b24e73ea
 	rm_child(pmip, base);
 
 	//deallocate its data blocks and inode
