@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "fs_level1.c"
+#include "fs_level2.c"
 
 int main(int argc, char *argv[], char *env[])
 {
@@ -33,22 +34,10 @@ int main(int argc, char *argv[], char *env[])
 			i++;
 		}
 
-	while (splitInput[i] = strtok(NULL, " "))
-	i = 0;
-
-	while (splitInput[i] = strtok(NULL, " ")
-	{
-		i++;
-	}
-
-	if (!strcmp(splitInput[0], "ls"))
-	{
-		ls(splitInput[1]);
-		i = 1;
-
-		splitInput[0] = strtok(input, " ");
-
 		while (splitInput[i] = strtok(NULL, " "))
+		i = 0;
+	
+		while (splitInput[i] = strtok(NULL, " ")
 		{
 			i++;
 		}
@@ -77,21 +66,33 @@ int main(int argc, char *argv[], char *env[])
 		{
 			creat_fs(splitInput[1]);
 		}
-		else if (splitInput[1] && splitInput [2] && !strcmp(splitInput[0], "link"))
+		else if (splitInput[1] && splitInput[2] && !strcmp(splitInput[0], "link"))
 		{
 			fs_link(splitInput[1], splitInput[2]);
 		}
-		else if (splitInput[1] && splitInput [2] && !strcmp(splitInput[0], "unlink"))
+		else if (splitInput[1] && splitInput[2] && !strcmp(splitInput[0], "unlink"))
 		{
 			fs_unlink(splitInput[1], splitInput[2]);
 		}
-		else if (splitInput[1] && splitInput [2] && !strcmp(splitInput[0], "symlink"))
+		else if (splitInput[1] && splitInput[2] && !strcmp(splitInput[0], "symlink"))
 		{
 			fs_symlink(splitInput[1], splitInput[2]);
 		}
 		else if (!strcmp(splitInput[0], "readlink"))
 		{
 			fs_readlink();
+		}
+		else if (!strcmp(splitInput[0], "open") && splitInput[1])
+		{
+			fs_open(splitInput[1]);
+		}
+		else if (!strcmp(splitInput[0], "close") && splitInput[1])
+		{
+			fs_close(splitInput[1]);
+		}
+		else if (!strcmp(splitInput[0], "lseek") && splitInput[1] && splitInput[2])
+		{
+			fs_lseek(splitInput[1], splitInput[2]);
 		}
 		else
 		{
